@@ -329,10 +329,11 @@ public:
     void SetFontWeight(wxFontWeight fontWeight) { m_fontWeight = fontWeight; m_flags |= wxTEXT_ATTR_FONT_WEIGHT; }
     void SetFontFaceName(const wxString& faceName) { m_fontFaceName = faceName; m_flags |= wxTEXT_ATTR_FONT_FACE; }
     void SetFontUnderlined(bool underlined) { m_fontUnderlined = underlined; m_flags |= wxTEXT_ATTR_FONT_UNDERLINE; }
-    void SetFontUnderline(bool underlined, wxTextAttrUnderlineType type = wxTEXT_ATTR_UNDERLINE_SOLID, const wxColour &colour = wxNullColour)
+    void SetFontUnderline(/*bool underlined, */wxTextAttrUnderlineType type = wxTEXT_ATTR_UNDERLINE_NONE, const wxColour &colour = wxNullColour)
     {
-        m_flags |= wxTEXT_ATTR_FONT_UNDERLINE;
-        m_fontUnderlined = underlined;
+        if( type != wxTEXT_ATTR_UNDERLINE_NONE )
+            m_flags |= wxTEXT_ATTR_FONT_UNDERLINE;
+//        m_fontUnderlined = underlined;
         m_fontUnderlineType = type;
         m_colUnderline = colour;
     }
@@ -414,7 +415,7 @@ public:
     bool HasFontPixelSize() const { return HasFlag(wxTEXT_ATTR_FONT_PIXEL_SIZE); }
     bool HasFontItalic() const { return HasFlag(wxTEXT_ATTR_FONT_ITALIC); }
     bool HasFontUnderlined() const { return m_fontUnderlined; }
-	bool HasFontUnderline() const { return HasFlag( wxTEXT_ATTR_UNDERLINE_SOLID ) || HasFlag( wxTEXT_ATTR_UNDERLINE_DOUBLE ) || HasFlag( wxTEXT_ATTR_UNDERLINE_WAVE ); }
+	bool HasFontUnderline() const { return HasFlag( wxTEXT_ATTR_FONT_UNDERLINE ); }
     bool HasFontStrikethrough() const { return HasFlag(wxTEXT_ATTR_FONT_STRIKETHROUGH); }
     bool HasFontFaceName() const { return HasFlag(wxTEXT_ATTR_FONT_FACE); }
     bool HasFontEncoding() const { return HasFlag(wxTEXT_ATTR_FONT_ENCODING); }

@@ -796,7 +796,7 @@ wxTextAttr wxTextAttr::Combine(const wxTextAttr& attr,
     }
 
     wxTextAttr newAttr(colFg, colBg, font);
-    newAttr.SetFontUnderline( attr.GetFontUnderlined(), attr.GetUnderlineType(), attr.GetUnderlineColour() );
+    newAttr.SetFontUnderline( /*attr.GetFontUnderlined(), */attr.GetUnderlineType(), attr.GetUnderlineColour() );
 
     if (attr.HasAlignment())
         newAttr.SetAlignment(attr.GetAlignment());

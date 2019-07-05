@@ -1232,10 +1232,10 @@ MyPanel::MyPanel( wxFrame *frame, int x, int y, int w, int h )
     m_textrich->SetDefaultStyle( wxTextAttr() );
     m_textrich->AppendText(wxT("And there is a "));
     wxTextAttr attr = m_textrich->GetDefaultStyle();
-    attr.SetFontUnderline( true, wxTEXT_ATTR_UNDERLINE_WAVE, *wxRED );
+    attr.SetFontUnderline( /*true, */wxTEXT_ATTR_UNDERLINE_WAVE, *wxRED );
     m_textrich->SetDefaultStyle( attr );
     m_textrich->AppendText(wxT("mispeled "));
-    attr.SetFontUnderline( false, wxTEXT_ATTR_UNDERLINE_NONE );
+    attr.SetFontUnderline( /*false, */wxTEXT_ATTR_UNDERLINE_NONE );
     m_textrich->SetDefaultStyle( attr );
     m_textrich->AppendText(wxT("word"));
     m_textrich->SetDefaultStyle(wxTextAttr(*wxBLUE, *wxWHITE));
