@@ -90,7 +90,7 @@ void wxTextEntry::GetSelection(long *from, long *to) const
 
 bool wxTextEntry::IsEditable() const
 {
-    return false;
+    return true;
 }
 
 void wxTextEntry::SetEditable(bool WXUNUSED(editable))

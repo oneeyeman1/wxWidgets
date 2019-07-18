@@ -46,6 +46,15 @@ public:
     virtual void SetSelection( long from, long to ) = 0;
     virtual void SetInsertionPoint(long pos) = 0;
     virtual void SetStyleFlags(long flags) = 0;
+    virtual bool SetStyle(int start, int end, const wxTextAttr &attr) = 0;
+    virtual bool GetStyle(long position, wxTextAttr &style) = 0;
+    virtual bool SetDefaultStyle(const wxTextAttr& style) = 0;
+    bool IsHTML() const { return m_isHTML; };
+    void SetHTMLContent(bool html) { m_isHTML = html; };
+protected:
+    void QtSetCharFormat(const wxTextAttr &style, int start, int end);
+private:
+    bool m_isHTML;
 };
 
 namespace
@@ -102,6 +111,169 @@ class wxQtMultiLineEdit : public wxQtEdit
 public:
     explicit wxQtMultiLineEdit(QTextEdit *edit) : m_edit(edit)
     {
+    }
+
+    virtual bool GetStyle(long position, wxTextAttr &style)
+    {
+        if( !m_edit->acceptRichText() )
+            return false;
+        QTextCursor cursor( m_edit->textCursor() );
+        cursor.setPosition( position, QTextCursor::MoveAnchor );
+        QTextCharFormat format = cursor.charFormat();
+        wxFont font( format.font() );
+        if( font.IsOk() )
+            style.SetFont( font );
+        wxColour foreColor = wxColour( format.foreground().color() );
+        if( foreColor.IsOk() )
+            style.SetTextColour( foreColor );
+        wxColour backColour = wxColour( format.background().color() );
+        if( backColour.IsOk() )
+            style.SetBackgroundColour( backColour );
+        Qt::Alignment align = m_edit->alignment();
+        switch (align)
+        {
+            case Qt::AlignRight:
+                style.SetAlignment( wxTEXT_ALIGNMENT_RIGHT );
+                break;
+            case Qt::AlignCenter:
+                style.SetAlignment( wxTEXT_ALIGNMENT_CENTER );
+                break;
+            case Qt::AlignJustify:
+                style.SetAlignment( wxTEXT_ALIGNMENT_JUSTIFIED );
+                break;
+            default:
+                style.SetAlignment( wxTEXT_ALIGNMENT_LEFT );
+                break;
+        }
+        return true;
+    }
+
+    virtual bool SetStyle(int start, int end, const wxTextAttr &style)
+    {
+        if( !m_edit->acceptRichText() )
+            return false;
+        if( start > end )
+            wxSwap( start, end );
+        QtSetCharFormat( style, start, end );
+        if( style.HasAlignment() )
+        {
+            Qt::Alignment align;
+            switch (style.GetAlignment())
+            {
+                case wxTEXT_ALIGNMENT_RIGHT:
+                    align = Qt::AlignRight;
+                    break;
+                case wxTEXT_ALIGNMENT_CENTER:
+                    align = Qt::AlignCenter;
+                    break;
+                case wxTEXT_ALIGNMENT_JUSTIFIED:
+                    align = Qt::AlignJustify;
+                    break;
+                default:
+                    align = Qt::AlignLeft;
+                    break;
+            }
+            m_edit->setAlignment( align );
+        }
+        if( style.HasLeftIndent() )
+        {
+// indentation
+        }
+        if( style.HasTabs() )
+        {
+// tabs
+        }
+        return true;
+    }
+
+    virtual bool SetDefaultStyle(const wxTextAttr& style)
+    {
+        m_isDefaultStyle = true;
+        int start = DoGetValue().length(), end = DoGetValue().length();
+//        if( style.HasTextColour() )
+//            m_edit->setTextColor( style.GetTextColour().GetQColor() );
+        QtSetCharFormat( style, start, end );
+//        m_edit->setCurrentCharFormat( 
+        m_isDefaultStyle = false;
+        return true;
+    }
+
+    void QtSetCharFormat(const wxTextAttr &style, int start, int end)
+    {
+        QTextCursor cursor( m_edit->textCursor() );
+        cursor.setPosition( start, QTextCursor::MoveAnchor );
+        if( start != end )
+            cursor.movePosition( QTextCursor::Right, QTextCursor::KeepAnchor, end - start );
+        else
+            cursor.movePosition( QTextCursor::Right, QTextCursor::KeepAnchor, end );
+        QTextCharFormat format;
+        if( style.HasFont() )
+        {
+            wxFont font( style.GetFont() );
+            if( font.IsOk() )
+            {
+                format.setFont( font.GetHandle() );
+            }
+            switch( font.GetWeight() )
+            {
+                case wxFONTWEIGHT_THIN:
+                    format.setFontWeight( QFont::Thin );
+                    break;
+                case wxFONTWEIGHT_EXTRALIGHT:
+                    format.setFontWeight( QFont::ExtraLight );
+                    break;
+                 case wxFONTWEIGHT_LIGHT:
+                    format.setFontWeight( QFont::Light );
+                    break;
+                case wxFONTWEIGHT_NORMAL:
+                    format.setFontWeight( QFont::Normal );
+                    break;
+                case wxFONTWEIGHT_MEDIUM:
+                    format.setFontWeight( QFont::Medium );
+                    break;
+                case wxFONTWEIGHT_SEMIBOLD:
+                    format.setFontWeight( QFont::DemiBold );
+                    break;
+                case wxFONTWEIGHT_BOLD:
+                    format.setFontWeight( QFont::Bold );
+                    break;
+                case wxFONTWEIGHT_EXTRABOLD:
+                    format.setFontWeight( QFont::ExtraBold );
+                    break;
+                case wxFONTWEIGHT_HEAVY :
+                    format.setFontWeight( QFont::Black );
+                    break;
+                case wxFONTWEIGHT_EXTRAHEAVY:
+                    format.setFontWeight( QFont::Black );
+                    break;
+                default:
+                    break;
+           }
+           switch( font.GetStyle() )
+           {
+               case wxFONTSTYLE_NORMAL:
+                   format.setFontItalic( false );
+                   break;
+               case wxFONTSTYLE_ITALIC:
+               case wxFONTSTYLE_SLANT:
+                   format.setFontItalic( true );
+                   break;
+               default:
+                   break;
+           }
+        }
+        if( style.HasTextColour() )
+        {
+            format.setForeground( QBrush( style.GetTextColour().GetQColor() ) );
+        }
+        if( style.HasBackgroundColour() )
+        {
+            format.setBackground( QBrush( style.GetBackgroundColour().GetQColor() ) );
+        }
+        if( !m_isDefaultStyle )
+            cursor.mergeCharFormat( format );
+        else
+            m_edit->setCurrentCharFormat( format );
     }
 
     virtual bool IsModified() const wxOVERRIDE
@@ -214,7 +386,10 @@ public:
 
     virtual void SetValue( const wxString &value ) wxOVERRIDE
     {
-        m_edit->setPlainText(wxQtConvertString( value ));
+        if( IsHTML() )
+            m_edit->setHtml(wxQtConvertString( value ));
+        else
+            m_edit->setPlainText(wxQtConvertString( value ));
         // the cursor is moved to the end, ensure it is shown
         m_edit->ensureCursorVisible();
     }
@@ -274,6 +449,11 @@ public:
 
         if ( flags & wxTE_RICH || flags & wxTE_RICH2 )
             m_edit->setAcceptRichText(true);
+
+        if( flags & wxTE_AUTO_URL )
+            SetHTMLContent( true );
+        else
+            SetHTMLContent( false );
     }
 
 private:
@@ -300,7 +480,7 @@ private:
     }
 
     QTextEdit* const m_edit;
-
+    bool m_isDefaultStyle;
     wxDECLARE_NO_COPY_CLASS(wxQtMultiLineEdit);
 };
 
@@ -439,6 +619,21 @@ public:
             m_edit->setEchoMode(QLineEdit::Password);
     }
 
+    virtual bool GetStyle(long WXUNUSED(position), wxTextAttr &WXUNUSED(style))
+    {
+        return false;
+    }
+
+    virtual bool SetStyle(int WXUNUSED(start), int WXUNUSED(end), const wxTextAttr &WXUNUSED(style))
+    {
+        return false;
+    }
+
+    virtual bool SetDefaultStyle(const wxTextAttr& WXUNUSED(style))
+    {
+        return false;
+    }
+    
 private:
     QLineEdit *m_edit;
 
@@ -585,19 +780,29 @@ void wxTextCtrl::DiscardEdits()
     m_qtEdit->DiscardEdits();
 }
 
-bool wxTextCtrl::SetStyle(long WXUNUSED(start), long WXUNUSED(end), const wxTextAttr& WXUNUSED(style))
+bool wxTextCtrl::SetStyle(long start, long end, const wxTextAttr& style)
 {
-    return false;
+    return m_qtEdit->SetStyle( start, end, style ); 
 }
 
-bool wxTextCtrl::GetStyle(long WXUNUSED(position), wxTextAttr& WXUNUSED(style))
+bool wxTextCtrl::GetStyle(long position, wxTextAttr& style)
 {
-    return false;
+    return m_qtEdit->GetStyle( position, style );
 }
 
-bool wxTextCtrl::SetDefaultStyle(const wxTextAttr& WXUNUSED(style))
+bool wxTextCtrl::SetDefaultStyle(const wxTextAttr& style)
 {
-    return false;
+    if ( !wxTextCtrlBase::SetDefaultStyle(style) )
+        return false;
+
+    if ( IsEditable() )
+    {
+        // we have to do this or the style wouldn't apply for the text typed by
+        // the user
+        m_qtEdit->SetDefaultStyle(m_defaultStyle);
+    }
+
+    return true;
 }
 
 long wxTextCtrl::XYToPosition(long x, long y) const
