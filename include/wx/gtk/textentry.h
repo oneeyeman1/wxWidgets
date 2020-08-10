@@ -62,7 +62,6 @@ public:
     void SendMaxLenEvent();
     bool GTKEntryOnInsertText(const char* text);
     bool GTKIsUpperCase() const { return m_isUpperCase; }
-
     // Called from "changed" signal handler (or, possibly, slightly later, when
     // coalescing several "changed" signals into a single event) for GtkEntry.
     //
@@ -117,7 +116,7 @@ protected:
     // Helper for wxTE_PROCESS_ENTER handling: activates the default button in
     // the dialog containing this control if any.
     bool ClickDefaultButtonIfPossible();
-
+    int m_maxLen;
 private:
     // implement this to return the associated GtkEntry or another widget
     // implementing GtkEditable

@@ -57,7 +57,8 @@ public:
     virtual void GetSelection(long* from, long* to) const wxOVERRIDE;
 
     virtual void Remove(long from, long to) wxOVERRIDE;
-
+    virtual void SetMaxLength(unsigned long length) wxOVERRIDE;
+    int GetMaxLength() const { return m_maxLen; }
     virtual void MarkDirty() wxOVERRIDE;
     virtual void DiscardEdits() wxOVERRIDE;
 

@@ -919,10 +919,9 @@ void wxTextEntry::SetEditable(bool editable)
 void wxTextEntry::SetMaxLength(unsigned long len)
 {
     GtkEntry* const entry = (GtkEntry*)GetEditable();
-    if (!GTK_IS_ENTRY(entry))
-        return;
-
-    gtk_entry_set_max_length(entry, len);
+    m_maxLen = len;
+    if ( entry )
+        gtk_entry_set_max_length(entry, len);
 }
 
 void wxTextEntry::SendMaxLenEvent()
