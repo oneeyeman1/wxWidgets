@@ -90,7 +90,7 @@ bool wxTextCtrl::Create( wxWindow *parent,
     const wxValidator& validator,
     const wxString& name )
 {
-    DontCreatePeer();
+    wxASSERT_MSG( !( HasFlag( wxTE_GENERATE_SEL_EVENT ) && !( HasFlag( wxTE_RICH2 ) ) ), "generating selection event requires rich edit control" );    DontCreatePeer();
     m_editable = true ;
 
     if ( ! (style & wxNO_BORDER) )

@@ -415,6 +415,7 @@ bool wxTextCtrl::Create(wxWindow *parent,
                         const wxValidator& validator,
                         const wxString& name)
 {
+    wxASSERT_MSG( !( HasFlag( wxTE_GENERATE_SEL_EVENT ) && !( HasFlag( wxTE_RICH2 ) ) ), "generating selection event requires rich edit control" );
     // base initialization
     if ( !CreateControl(parent, id, pos, size, style, validator, name) )
         return false;
@@ -644,6 +645,9 @@ bool wxTextCtrl::MSWCreateText(const wxString& value,
 
             ::SendMessage(GetHwnd(), EM_AUTOURLDETECT, TRUE, 0);
         }
+
+        if( m_windowStyle & wxTE_GENERATE_SEL_EVENT )
+            mask |= ENM_SELCHANGE;
 
         ::SendMessage(GetHwnd(), EM_SETEVENTMASK, 0, mask);
 
@@ -2995,7 +2999,29 @@ bool wxTextCtrl::MSWOnNotify(int idCtrl, WXLPARAM lParam, WXLPARAM *result)
     NMHDR *hdr = (NMHDR* )lParam;
     switch ( hdr->code )
     {
-       case EN_MSGFILTER:
+        case EN_SELCHANGE:
+        {
+            if( GetWindowStyleFlag() & wxTE_GENERATE_SEL_EVENT )
+            {
+                DWORD position;
+                CHARRANGE cr;
+                wxPoint pos;
+                ::SendMessage( GetHwnd(), EM_GETSEL, (WPARAM) &position, 0 );
+                pos.y = ::SendMessage( GetHwnd(), EM_EXLINEFROMCHAR, 0, (LPARAM) position ) + 1;
+                cr.cpMax = 0;
+                cr.cpMin = 0;
+                ::SendMessage( GetHwnd(), EM_EXGETSEL, 0, (LPARAM) &cr );
+                LONG firstchar = ::SendMessage( GetHwnd(), EM_LINEINDEX, (WPARAM) -1, 0 );
+                pos.x = ( cr.cpMin - firstchar ) + 1;
+                wxCommandEvent event( wxEVT_TEXT_CARET, GetId() );
+                event.SetEventObject( this );
+                event.SetClientData( &pos );
+                GetEventHandler()->ProcessEvent( event );
+            }
+        }
+        break;
+
+        case EN_MSGFILTER:
             {
                 const MSGFILTER *msgf = (MSGFILTER *)lParam;
                 UINT msg = msgf->msg;

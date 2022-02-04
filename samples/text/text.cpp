@@ -126,6 +126,7 @@ public:
     void DoMoveToEndOfText();
     void DoMoveToEndOfEntry();
     void DoGetWindowCoordinates();
+    void OnSelectionChange(wxCommandEvent &event);
 
     // return true if currently text control has any selection
     bool HasSelection() const
@@ -1245,7 +1246,7 @@ MyPanel::MyPanel( wxFrame *frame, int x, int y, int w, int h )
                                 "\nAnd here is a link in quotation marks to "
                                 "test wxTE_AUTO_URL: \"http://www.wxwidgets.org\"",
                                 wxPoint(450, 10), wxSize(200, 230),
-                                wxTE_RICH | wxTE_MULTILINE | wxTE_AUTO_URL);
+                                wxTE_RICH | wxTE_MULTILINE | wxTE_AUTO_URL | wxTE_GENERATE_SEL_EVENT);
     m_textrich->SetStyle(0, 10, *wxRED);
     m_textrich->SetStyle(10, 20, *wxBLUE);
     m_textrich->SetStyle(30, 40,
@@ -1277,6 +1278,8 @@ MyPanel::MyPanel( wxFrame *frame, int x, int y, int w, int h )
     attr.SetFontUnderlined(wxTEXT_ATTR_UNDERLINE_DOUBLE, *wxGREEN);
     const long endPos = m_textrich->GetLastPosition();
     m_textrich->SetStyle(endPos - 4, endPos - 2, attr);
+    if( m_textrich->GetWindowStyleFlag() & wxTE_GENERATE_SEL_EVENT )
+        m_textrich->Bind( wxEVT_TEXT_CARET, &MyPanel::OnSelectionChange, this );
 
     // lay out the controls
     wxBoxSizer *column1 = new wxBoxSizer(wxVERTICAL);
@@ -1315,6 +1318,13 @@ wxTextCtrl *MyPanel::GetFocusedText() const
     return text ? text : m_multitext;
 }
 
+void MyPanel::OnSelectionChange(wxCommandEvent &event)
+{
+    wxPoint *pos = (wxPoint *) event.GetClientData();
+    wxString str = wxString::Format( "Cursor position changes. New position: x - %ld, y - %ld\n", pos->x, pos->y );
+    *m_log << str;
+}
+	
 #if wxUSE_CLIPBOARD
 void MyPanel::DoPasteFromClipboard()
 {

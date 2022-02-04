@@ -125,6 +125,7 @@ wxDEFINE_EVENT( wxEVT_TEXT, wxCommandEvent );
 wxDEFINE_EVENT( wxEVT_TEXT_ENTER, wxCommandEvent );
 wxDEFINE_EVENT( wxEVT_TEXT_URL, wxTextUrlEvent );
 wxDEFINE_EVENT( wxEVT_TEXT_MAXLEN, wxCommandEvent );
+wxDEFINE_EVENT( wxEVT_TEXT_CARET, wxCommandEvent );
 
 wxIMPLEMENT_ABSTRACT_CLASS(wxTextCtrlBase, wxControl);
 

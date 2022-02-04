@@ -647,7 +647,41 @@ static void state_flags_changed(GtkWidget*, GtkStateFlags, wxTextCtrl* win)
     win->GTKUpdateCursor(false, true);
 }
 }
-#endif // __WXGTK3__
+
+#if GTK_CHECK_VERSION( 3, 16, 0 )
+extern "C" {
+static gboolean gtk_text_selection_callback(GtkTextView *text_view, GtkTextExtendSelection granularity,
+                                            GtkTextIter *location, GtkTextIter *start, GtkTextIter *stop,
+                                            wxTextCtrl *win)
+{
+    if( win->IgnoreTextUpdate() )
+        return GDK_EVENT_STOP;
+    if( win->GetWindowStyleFlag() & wxTE_GENERATE_SEL_EVENT )
+    {
+        wxPoint pos;
+        pos.y = gtk_text_iter_get_line( stop );
+        pos.x = gtk_text_iter_get_line_offset( stop );
+        wxCommandEvent event( wxEVT_TEXT_CARET, win->GetId() );
+        event.SetEventObject( win );
+        event.SetClientData( &pos );
+        win->HandleWindowEvent( event );
+        return GDK_EVENT_PROPAGATE;
+    }
+}
+}
+#endif#endif // __WXGTK3__
+
+extern "C" {
+static void gtk_text_move_cursor(GtkTextView *text_view, GtkMovementStep step, gint count,
+                                 gboolean extend_selection, wxTextCtrl *win)
+{
+    if( win->IgnoreTextUpdate() )
+        return;
+    wxCommandEvent event( wxEVT_TEXT_CARET, win-<GetId() );
+    event.SetEventObject( win );
+    win->HandleWindowEvent( event );
+}
+}
 
 //-----------------------------------------------------------------------------
 //  wxTextCtrl
@@ -736,6 +770,7 @@ bool wxTextCtrl::Create( wxWindow *parent,
                          const wxValidator& validator,
                          const wxString &name )
 {
+    wxASSERT_MSG( HasFlag( wxTE_GENERATE_SEL_EVENT ) && !( HasFlag( wxTE_RICH2 ) ) ), "generating selection event requires rich edit control" );
     if (!PreCreation( parent, pos, size ) ||
         !CreateBase( parent, id, pos, size, style, validator, name ))
     {
@@ -781,6 +816,15 @@ bool wxTextCtrl::Create( wxWindow *parent,
         gtk_widget_add_events( GTK_WIDGET(m_text), GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK );
 
         gtk_widget_set_can_focus(m_widget, FALSE);
+        if( style & wxTE_GENERATE_SEL_EVENT )
+        {
+#if GTK_CHECK_VERSION( 3, 16, 0 )
+            if( !gtk_check_version( 3, 16, 0 ) )
+                g_signal_connect_after( m_text, "extend-selection", G_CALLBACK( gtk_text_selection_callback ), this );
+            else
+#endif
+                g_signal_connect_after( m_text, "move-cursor", G_CALLBACK( gtk_text_move_cursor ), this );
+        }
     }
     else
     {

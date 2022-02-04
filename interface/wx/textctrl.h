@@ -9,7 +9,7 @@
    wxTextCtrl style flags
 */
 #define wxTE_NO_VSCROLL     0x0002
-
+#define wxTE_GENERATE_SEL_EVENT     0x0004
 #define wxTE_READONLY       0x0010
 #define wxTE_MULTILINE      0x0020
 #define wxTE_PROCESS_TAB    0x0040
@@ -1131,6 +1131,9 @@ class WXDLLIMPEXP_CORE wxTextProofOptions
     @style{wxTE_CAPITALIZE}
            On PocketPC and Smartphone, causes the first letter to be
            capitalized.
+    @style{wxTE_GENERATE_SEL_EVENT}
+           Use this style to generate selection changes/cursor movement events.
+           @Since 3.1.6
     @endStyleTable
 
     Note that alignment styles (wxTE_LEFT, wxTE_CENTRE and wxTE_RIGHT) can be
@@ -1305,6 +1308,10 @@ class WXDLLIMPEXP_CORE wxTextProofOptions
     @event{EVT_TEXT_MAXLEN(id, func)}
         This event is generated when the user tries to enter more text into the
         control than the limit set by wxTextCtrl::SetMaxLength(), see its description.
+    @event{EVT_TEXT_SEL_CHANGE(id, func)}
+        This event is generated when the user changes the selection in the text
+        control. It is used for multiline richedit textcontrol.
+        @Since 3.1.6
     @endEventTable
 
     @library{wxcore}

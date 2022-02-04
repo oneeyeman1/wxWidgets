@@ -458,6 +458,25 @@ NSView* wxMacEditHelper::ms_viewCurrentlyEdited = nil;
    // shared color panel is used (as when using wxColourPickerCtrl for example).
 }
 
+- (void)textViewDidChangeSelection:(NSNotification *)aNotification
+{
+    if( win->GetWindowStyleFlag() & wxTE_GENERATE_SEL_EVENT )
+    {
+        wxUnusedVar( aNotification );
+        wxWidgetCocoaImpl *impl = (wxWidgetCocoaImpl *) wxWidgetImpl::FindFromWXWidget( self );
+        if( impl )
+        {
+            wxWindow *wxpeer = (wxWindow *) impl->GetWXPeer();
+            if( wxpeer && wxpeer->HasFlag( wxTE_GENERATE_SEL_EVENT ) )
+            {
+                UITextRange *selectedRange = [textView selectedTextRange];
+                wxCommandEvent event( wxEVT_TEXT_CARET, wxpeer->GetId() );
+                event.SetEventObject( wxpeer );
+                wxpeer->HandleWindowEvent( event );
+            }
+        }
+    }
+}
 
 - (void) setEnabled:(BOOL) flag
 {

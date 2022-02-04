@@ -60,7 +60,7 @@ const wxTextCoord wxInvalidTextCoord    = -2;
 // Some of wxTE_XXX are defined in wx/defs.h, they take 0x0C70 bits.
 
 #define wxTE_NO_VSCROLL     0x0002
-
+#define wxTE_GENERATE_SEL_EVENT     0x0004
 // alignment flags
 #define wxTE_LEFT           0x0000                    // 0x0000
 #define wxTE_CENTER         wxALIGN_CENTER_HORIZONTAL // 0x0100
@@ -897,6 +897,7 @@ wxDECLARE_EXPORTED_EVENT(WXDLLIMPEXP_CORE, wxEVT_TEXT, wxCommandEvent);
 wxDECLARE_EXPORTED_EVENT(WXDLLIMPEXP_CORE, wxEVT_TEXT_ENTER, wxCommandEvent);
 wxDECLARE_EXPORTED_EVENT(WXDLLIMPEXP_CORE, wxEVT_TEXT_URL, wxTextUrlEvent);
 wxDECLARE_EXPORTED_EVENT(WXDLLIMPEXP_CORE, wxEVT_TEXT_MAXLEN, wxCommandEvent);
+wxDECLARE_EXPORTED_EVENT(WXDLLIMPEXP_CORE, wxEVT_TEXT_CARET, wxCommandEvent);
 
 class WXDLLIMPEXP_CORE wxTextUrlEvent : public wxCommandEvent
 {
@@ -955,6 +956,7 @@ typedef void (wxEvtHandler::*wxTextUrlEventFunction)(wxTextUrlEvent&);
 #define EVT_TEXT_ENTER(id, fn) wx__DECLARE_TEXTEVT(ENTER, id, fn)
 #define EVT_TEXT_URL(id, fn) wx__DECLARE_TEXTURLEVT(URL, id, fn)
 #define EVT_TEXT_MAXLEN(id, fn) wx__DECLARE_TEXTEVT(MAXLEN, id, fn)
+#define EVT_TEXT_SEL_CHANGE(id, fn) wx__DECLARE_TEXTEVT(SEL, id, fn)
 
 #if wxHAS_TEXT_WINDOW_STREAM
 
