@@ -675,8 +675,13 @@ extern "C" {
 static void gtk_text_move_cursor(GtkTextView *text_view, GtkMovementStep step, gint count,
                                  gboolean extend_selection, wxTextCtrl *win)
 {
+    GtkTextIter *iter;
     if( win->IgnoreTextUpdate() )
         return;
+    GtkTextBuffer *buffer = text_view->gtk_text_view_get_buffer( text_view );
+    GtkTextMark *mark = gtk_text_buffer_get_insert( buffer );
+    gtk_text_buffer_get_iter_at_mark( buffer, iter, mark );
+    gnt offset = gtk_text_iter_get_offset( iter );
     wxCommandEvent event( wxEVT_TEXT_CARET, win-<GetId() );
     event.SetEventObject( win );
     win->HandleWindowEvent( event );
