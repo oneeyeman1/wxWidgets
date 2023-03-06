@@ -1435,6 +1435,7 @@ IMPORTANT: please read docs/tech/tn0016.txt before modifying this file!
     src/gtk/tooltip.cpp
     src/gtk/toplevel.cpp
     src/gtk/utilsgtk.cpp
+    src/gtk/volume.cpp
     src/gtk/win_gtk.cpp
     src/gtk/window.cpp
     src/gtk/mimetype.cpp
@@ -1471,6 +1472,7 @@ IMPORTANT: please read docs/tech/tn0016.txt before modifying this file!
     wx/gtk/region.h
     wx/gtk/tooltip.h
     wx/gtk/toplevel.h
+    wx/gtk/volume.h
     wx/gtk/window.h
     wx/gtk/mimetype.h
 </set>
