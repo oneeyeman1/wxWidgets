@@ -2,7 +2,6 @@
 // Name:        src/common/mimecmn.cpp
 // Purpose:     classes and functions to manage MIME types
 // Author:      Vadim Zeitlin
-// Modified by:
 //  Chris Elliott (biol75@york.ac.uk) 5 Dec 00: write support for Win32
 // Created:     23.09.98
 // Copyright:   (c) 1998 Vadim Zeitlin <zeitlin@dptmaths.ens-cachan.fr>
@@ -115,9 +114,6 @@ wxFileTypeInfo::wxFileTypeInfo(const wxArrayString& sArray)
         m_exts.Add(sArray[i]);
     }
 }
-
-#include "wx/arrimpl.cpp"
-WX_DEFINE_OBJARRAY(wxArrayFileTypeInfo)
 
 // ============================================================================
 // implementation of the wrapper classes
@@ -587,10 +583,9 @@ wxMimeTypesManager::GetFileTypeFromExtension(const wxString& ext)
         //
         // TODO linear search is potentially slow, perhaps we should use a
         //       sorted array?
-        size_t count = m_fallbacks.GetCount();
-        for ( size_t n = 0; n < count; n++ ) {
-            if ( m_fallbacks[n].GetExtensions().Index(ext) != wxNOT_FOUND ) {
-                ft = new wxFileType(m_fallbacks[n]);
+        for ( const auto& fallback : m_fallbacks ) {
+            if ( fallback.GetExtensions().Index(ext) != wxNOT_FOUND ) {
+                ft = new wxFileType(fallback);
 
                 break;
             }
@@ -611,11 +606,10 @@ wxMimeTypesManager::GetFileTypeFromMimeType(const wxString& mimeType)
         //
         // TODO linear search is potentially slow, perhaps we should use a
         //      sorted array?
-        size_t count = m_fallbacks.GetCount();
-        for ( size_t n = 0; n < count; n++ ) {
+        for ( const auto& fallback : m_fallbacks ) {
             if ( wxMimeTypesManager::IsOfType(mimeType,
-                                              m_fallbacks[n].GetMimeType()) ) {
-                ft = new wxFileType(m_fallbacks[n]);
+                                              fallback.GetMimeType()) ) {
+                ft = new wxFileType(fallback);
 
                 break;
             }
@@ -639,10 +633,9 @@ size_t wxMimeTypesManager::EnumAllFileTypes(wxArrayString& mimetypes)
     size_t countAll = m_impl->EnumAllFileTypes(mimetypes);
 
     // add the fallback filetypes
-    size_t count = m_fallbacks.GetCount();
-    for ( size_t n = 0; n < count; n++ ) {
-        if ( mimetypes.Index(m_fallbacks[n].GetMimeType()) == wxNOT_FOUND ) {
-            mimetypes.Add(m_fallbacks[n].GetMimeType());
+    for ( const auto& fallback : m_fallbacks ) {
+        if ( mimetypes.Index(fallback.GetMimeType()) == wxNOT_FOUND ) {
+            mimetypes.Add(fallback.GetMimeType());
             countAll++;
         }
     }
@@ -696,7 +689,7 @@ public:
         if ( gs_mimeTypesManager.m_impl != nullptr )
         {
             wxDELETE(gs_mimeTypesManager.m_impl);
-            gs_mimeTypesManager.m_fallbacks.Clear();
+            gs_mimeTypesManager.m_fallbacks.clear();
         }
     }
 

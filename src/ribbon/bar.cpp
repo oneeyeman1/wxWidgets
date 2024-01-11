@@ -2,7 +2,6 @@
 // Name:        src/ribbon/bar.cpp
 // Purpose:     Top-level component of the ribbon-bar-style interface
 // Author:      Peter Cawley
-// Modified by:
 // Created:     2009-05-23
 // Copyright:   (C) Peter Cawley
 // Licence:     wxWindows licence
@@ -26,10 +25,7 @@
 #include "wx/msw/private.h"
 #endif
 
-#include "wx/arrimpl.cpp"
 #include "wx/imaglist.h"
-
-WX_DEFINE_USER_EXPORTED_OBJARRAY(wxRibbonPageTabInfoArray)
 
 wxDEFINE_EVENT(wxEVT_RIBBONBAR_PAGE_CHANGED, wxRibbonBarEvent);
 wxDEFINE_EVENT(wxEVT_RIBBONBAR_PAGE_CHANGING, wxRibbonBarEvent);

@@ -27,9 +27,6 @@
 
 #include "wx/thread.h"
 #include "wx/except.h"
-#include "wx/scopeguard.h"
-
-#include "wx/private/threadinfo.h"
 
 #ifndef WX_PRECOMP
     #include "wx/app.h"
@@ -839,11 +836,6 @@ void *wxPthreadStart(void *ptr)
 
 void *wxThreadInternal::PthreadStart(wxThread *thread)
 {
-    // Ensure that we clean up thread-specific data before exiting the thread
-    // and do it as late as possible as wxLog calls can recreate it and may
-    // happen until the very end.
-    wxON_BLOCK_EXIT0(wxThreadSpecificInfo::ThreadCleanUp);
-
     wxThreadInternal *pthread = thread->m_internal;
 
     wxLogTrace(TRACE_THREADS, wxT("Thread %p started."), THR_ID(pthread));
@@ -1400,7 +1392,10 @@ wxThreadError wxThread::Run()
 
 void wxThread::SetPriority(unsigned int prio)
 {
-    wxCHECK_RET( wxPRIORITY_MIN <= prio && prio <= wxPRIORITY_MAX,
+    // Don't compare with wxPRIORITY_MIN as long as it is 0, as the comparison
+    // would be always true.
+    static_assert( wxPRIORITY_MIN == 0, "update the check below" );
+    wxCHECK_RET( /* wxPRIORITY_MIN <= prio && */ prio <= wxPRIORITY_MAX,
                  wxT("invalid thread priority") );
 
     wxCriticalSectionLocker lock(m_critsect);
@@ -1581,9 +1576,19 @@ wxThreadError wxThread::Delete(ExitCode *rc, wxThreadWait WXUNUSED(waitMode))
     // ask the thread to stop
     m_internal->SetCancelFlag();
 
-    m_critsect.Leave();
-
+    // Normally we should never call out while holding the lock (on m_critsect
+    // in this case), but we can't do it later because as soon as we unlock it,
+    // this object may be destroyed as the thread executing its Entry() may
+    // call TestDestroy() and decide to exit at any moment, so we have to do it
+    // now and hope that OnDelete() doesn't do anything stupid (or, preferably,
+    // anything at all).
     OnDelete();
+
+    // If it's currently paused, we need to resume it first.
+    if ( state == STATE_PAUSED )
+        m_internal->Resume();
+
+    m_critsect.Leave();
 
     switch ( state )
     {
@@ -1598,12 +1603,6 @@ wxThreadError wxThread::Delete(ExitCode *rc, wxThreadWait WXUNUSED(waitMode))
         case STATE_EXITED:
             // nothing to do
             break;
-
-        case STATE_PAUSED:
-            // resume the thread first
-            m_internal->Resume();
-
-            wxFALLTHROUGH;
 
         default:
             if ( !isDetached )
@@ -1775,6 +1774,8 @@ bool wxThread::TestDestroy()
 
     m_critsect.Enter();
 
+    const bool wasCancelled = m_internal->WasCancelled();
+
     if ( m_internal->GetState() == STATE_PAUSED )
     {
         m_internal->SetReallyPaused(true);
@@ -1792,7 +1793,7 @@ bool wxThread::TestDestroy()
         m_critsect.Leave();
     }
 
-    return m_internal->WasCancelled();
+    return wasCancelled;
 }
 
 wxThread::~wxThread()

@@ -15,7 +15,6 @@
 #include "wx/zipstrm.h"
 
 #ifndef WX_PRECOMP
-    #include "wx/hashmap.h"
     #include "wx/intl.h"
     #include "wx/log.h"
     #include "wx/utils.h"
@@ -24,9 +23,11 @@
 #include "wx/datstrm.h"
 #include "wx/zstream.h"
 #include "wx/mstream.h"
-#include "wx/scopedptr.h"
 #include "wx/wfstream.h"
 #include "zlib.h"
+
+#include <memory>
+#include <unordered_map>
 
 // value for the 'version needed to extract' field (20 means 2.0)
 enum {
@@ -669,9 +670,6 @@ static void Unique(wxZipMemory*& zm, size_t size)
 /////////////////////////////////////////////////////////////////////////////
 // Collection of weak references to entries
 
-WX_DECLARE_HASH_MAP(long, wxZipEntry*, wxIntegerHash,
-                    wxIntegerEqual, wxOffsetZipEntryMap_);
-
 class wxZipWeakLinks
 {
 public:
@@ -683,33 +681,29 @@ public:
         { RemoveEntry(key); if (--m_ref == 0) delete this; }
 
     wxZipWeakLinks *AddEntry(wxZipEntry *entry, wxFileOffset key);
-    void RemoveEntry(wxFileOffset key)
-        { m_entries.erase(wx_truncate_cast(key_type, key)); }
+    void RemoveEntry(wxFileOffset key) { m_entries.erase(key); }
     wxZipEntry *GetEntry(wxFileOffset key) const;
     bool IsEmpty() const { return m_entries.empty(); }
 
 private:
     ~wxZipWeakLinks() { wxASSERT(IsEmpty()); }
 
-    typedef wxOffsetZipEntryMap_::key_type key_type;
-
     int m_ref;
-    wxOffsetZipEntryMap_ m_entries;
+    std::unordered_map<wxFileOffset, wxZipEntry*> m_entries;
 
     wxSUPPRESS_GCC_PRIVATE_DTOR_WARNING(wxZipWeakLinks)
 };
 
 wxZipWeakLinks *wxZipWeakLinks::AddEntry(wxZipEntry *entry, wxFileOffset key)
 {
-    m_entries[wx_truncate_cast(key_type, key)] = entry;
+    m_entries[key] = entry;
     m_ref++;
     return this;
 }
 
 wxZipEntry *wxZipWeakLinks::GetEntry(wxFileOffset key) const
 {
-    wxOffsetZipEntryMap_::const_iterator it =
-        m_entries.find(wx_truncate_cast(key_type, key));
+    auto it = m_entries.find(key);
     return it != m_entries.end() ?  it->second : nullptr;
 }
 
@@ -1571,10 +1565,6 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 // Input stream
 
-// leave the default wxZipEntryPtr free for users
-wxDECLARE_SCOPED_PTR(wxZipEntry, wxZipEntryPtr_)
-wxDEFINE_SCOPED_PTR (wxZipEntry, wxZipEntryPtr_)
-
 // constructor
 //
 wxZipInputStream::wxZipInputStream(wxInputStream& stream,
@@ -1805,7 +1795,7 @@ wxZipEntry *wxZipInputStream::GetNextEntry()
     if (!IsOk())
         return nullptr;
 
-    wxZipEntryPtr_ entry(new wxZipEntry(m_entry));
+    std::unique_ptr<wxZipEntry> entry(new wxZipEntry(m_entry));
     entry->m_backlink = m_weaklinks->AddEntry(entry.get(), entry->GetKey());
     return entry.release();
 }
@@ -2026,7 +2016,7 @@ bool wxZipInputStream::OpenDecompressor(bool raw /*=false*/)
         }
     }
 
-    m_crcAccumulator = crc32(0, Z_NULL, 0);
+    m_crcAccumulator = crc32(0, nullptr, 0);
     m_lasterror = m_decomp ? m_decomp->GetLastError() : wxSTREAM_READ_ERROR;
     return IsOk();
 }
@@ -2154,9 +2144,6 @@ size_t wxZipInputStream::OnSysRead(void *buffer, size_t size)
 /////////////////////////////////////////////////////////////////////////////
 // Output stream
 
-#include "wx/listimpl.cpp"
-WX_DEFINE_LIST(wxZipEntryList_)
-
 wxZipOutputStream::wxZipOutputStream(wxOutputStream& stream,
                                      int level      /*=-1*/,
                                      wxMBConv& conv /*=wxConvUTF8*/)
@@ -2195,7 +2182,6 @@ void wxZipOutputStream::Init(int level)
 wxZipOutputStream::~wxZipOutputStream()
 {
     Close();
-    WX_CLEAR_LIST(wxZipEntryList_, m_entries);
     delete m_store;
     delete m_deflate;
     delete m_pending;
@@ -2224,7 +2210,7 @@ bool wxZipOutputStream::PutNextDirEntry(
 bool wxZipOutputStream::CopyEntry(wxZipEntry *entry,
                                   wxZipInputStream& inputStream)
 {
-    wxZipEntryPtr_ e(entry);
+    std::unique_ptr<wxZipEntry> e(entry);
 
     return
         inputStream.DoOpen(e.get(), true) &&
@@ -2310,7 +2296,7 @@ bool wxZipOutputStream::DoCreate(wxZipEntry *entry, bool raw /*=false*/)
 
     m_pending->SetOffset(m_headerOffset);
 
-    m_crcAccumulator = crc32(0, Z_NULL, 0);
+    m_crcAccumulator = crc32(0, nullptr, 0);
 
     if (raw)
         m_raw = true;
@@ -2394,7 +2380,7 @@ bool wxZipOutputStream::CloseCompressor(wxOutputStream *comp)
 void wxZipOutputStream::CreatePendingEntry(const void *buffer, size_t size)
 {
     wxASSERT(IsOk() && m_pending && !m_comp);
-    wxZipEntryPtr_ spPending(m_pending);
+    std::unique_ptr<wxZipEntry> spPending(m_pending);
     m_pending = nullptr;
 
     Buffer bufs[] = {
@@ -2422,7 +2408,7 @@ void wxZipOutputStream::CreatePendingEntry(const void *buffer, size_t size)
     m_lasterror = m_parent_o_stream->GetLastError();
 
     if (IsOk()) {
-        m_entries.push_back(spPending.release());
+        m_entries.push_back(std::move(spPending));
         OnSysWrite(m_initialData, m_initialSize);
     }
 
@@ -2435,7 +2421,7 @@ void wxZipOutputStream::CreatePendingEntry(const void *buffer, size_t size)
 void wxZipOutputStream::CreatePendingEntry()
 {
     wxASSERT(IsOk() && m_pending && !m_comp);
-    wxZipEntryPtr_ spPending(m_pending);
+    std::unique_ptr<wxZipEntry> spPending(m_pending);
     m_pending = nullptr;
     m_lasterror = wxSTREAM_WRITE_ERROR;
 
@@ -2474,7 +2460,7 @@ void wxZipOutputStream::CreatePendingEntry()
     m_headerSize = spPending->WriteLocal(*m_parent_o_stream, GetConv(), m_format);
 
     if (m_parent_o_stream->IsOk()) {
-        m_entries.push_back(spPending.release());
+        m_entries.push_back(std::move(spPending));
         m_comp = m_store;
         m_store->Write(m_initialData, m_initialSize);
     }
@@ -2503,12 +2489,10 @@ bool wxZipOutputStream::Close()
     endrec.SetOffset(m_headerOffset);
     endrec.SetComment(m_Comment);
 
-    wxZipEntryList_::iterator it;
     wxFileOffset size = 0;
 
-    for (it = m_entries.begin(); it != m_entries.end(); ++it) {
-        size += (*it)->WriteCentral(*m_parent_o_stream, GetConv());
-        delete *it;
+    for (const auto& it : m_entries) {
+        size += it->WriteCentral(*m_parent_o_stream, GetConv());
     }
     m_entries.clear();
 

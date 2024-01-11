@@ -3,7 +3,6 @@
 // Purpose:      Dynamic loading framework
 // Author:       Ron Lee, David Falkinder, Vadim Zeitlin and a cast of 1000's
 //               (derived in part from dynlib.cpp (c) 1998 Guilhem Lavaux)
-// Modified by:
 // Created:      03/12/01
 // Copyright:    (c) 2001 Ron Lee <ron@debian.org>
 // Licence:      wxWindows licence
@@ -21,14 +20,14 @@
 #if wxUSE_DYNAMIC_LOADER
 
 #include "wx/dynlib.h"
-#include "wx/hashmap.h"
 #include "wx/module.h"
+
+#include <unordered_map>
 
 class WXDLLIMPEXP_FWD_BASE wxPluginLibrary;
 
+using wxDLManifest = std::unordered_map<wxString, wxPluginLibrary*>;
 
-WX_DECLARE_STRING_HASH_MAP_WITH_DECL(wxPluginLibrary *, wxDLManifest,
-                                     class WXDLLIMPEXP_BASE);
 typedef wxDLManifest wxDLImports;
 
 // ---------------------------------------------------------------------------
@@ -128,7 +127,7 @@ public:
         return m_entry->GetSymbol( symbol, success );
     }
 
-    static void CreateManifest() { ms_manifest = new wxDLManifest(wxKEY_STRING); }
+    static void CreateManifest() { ms_manifest = new wxDLManifest(); }
     static void ClearManifest() { delete ms_manifest; ms_manifest = nullptr; }
 
 private:

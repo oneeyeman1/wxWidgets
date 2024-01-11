@@ -2,7 +2,6 @@
 // Name:        toolbar.cpp
 // Purpose:     wxToolBar sample
 // Author:      Julian Smart
-// Modified by:
 // Created:     04/01/98
 // Copyright:   (c) Julian Smart
 // Licence:     wxWindows licence
@@ -197,7 +196,7 @@ private:
 // constants
 // ----------------------------------------------------------------------------
 
-const int ID_TOOLBAR = 500;
+const int ID_TOOLBAR = wxID_HIGHEST;
 
 static const long TOOLBAR_STYLE = wxTB_FLAT | wxTB_DOCKABLE | wxTB_TEXT;
 

@@ -2,7 +2,6 @@
 // Name:        src/osx/cocoa/evtloop.mm
 // Purpose:     implementation of wxEventLoop for OS X
 // Author:      Vadim Zeitlin, Stefan Csomor
-// Modified by:
 // Created:     2006-01-12
 // Copyright:   (c) 2006 Vadim Zeitlin <vadim@wxwidgets.org>
 // Licence:     wxWindows licence
@@ -31,9 +30,10 @@
 #include "wx/log.h"
 #include "wx/scopeguard.h"
 #include "wx/vector.h"
-#include "wx/hashmap.h"
 
 #include "wx/osx/private.h"
+
+#include <unordered_map>
 
 struct wxModalSessionStackElement
 {
@@ -43,8 +43,7 @@ struct wxModalSessionStackElement
 
 typedef wxVector<wxModalSessionStackElement> wxModalSessionStack;
 
-WX_DECLARE_HASH_MAP(wxGUIEventLoop*, wxModalSessionStack*, wxPointerHash, wxPointerEqual,
-                    wxModalSessionStackMap);
+using wxModalSessionStackMap = std::unordered_map<wxGUIEventLoop*, wxModalSessionStack*>;
 
 static wxModalSessionStackMap gs_modalSessionStackMap;
 

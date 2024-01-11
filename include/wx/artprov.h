@@ -2,7 +2,6 @@
 // Name:        wx/artprov.h
 // Purpose:     wxArtProvider class
 // Author:      Vaclav Slavik
-// Modified by:
 // Created:     18/03/2002
 // Copyright:   (c) Vaclav Slavik
 // Licence:     wxWindows licence
@@ -17,8 +16,8 @@
 #include "wx/iconbndl.h"
 #include "wx/bmpbndl.h"
 
-class WXDLLIMPEXP_FWD_CORE wxArtProvidersList;
-class WXDLLIMPEXP_FWD_CORE wxArtProviderCache;
+class wxArtProvidersList;
+class wxArtProviderCache;
 class WXDLLIMPEXP_FWD_CORE wxWindow;
 
 class wxArtProviderModule;

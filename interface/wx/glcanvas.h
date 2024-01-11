@@ -774,8 +774,8 @@ enum
         libraries are found.
         On Windows, OpenGL support is enabled by default (@c wxUSE_GLCANVAS set
         to @c 1 in the @c setup.h file). If your program links with wxWidgets
-        statically, you need to add @c opengl32.lib (and @c glu32.lib for old
-        OpenGL versions) to the list of the libraries your program is linked with.
+        statically, you need to add @c opengl32.lib to the list of libraries
+        your program is linked with.
 
     @library{wxgl}
     @category{gl}
@@ -886,6 +886,19 @@ public:
                long style = 0,
                const wxString& name = "GLCanvas",
                const wxPalette& palette = wxNullPalette);
+
+
+    /**
+       Re-creates EGLSurface. To be used after a reparent or other
+       changes that may invalidate the EGL drawing surface.
+
+       Only available when wxUSE_GLCANVAS_EGL is enabled.
+
+       @return @true if surface is successfully recreated
+
+       @since 3.2.3
+    */
+    bool CreateSurface();
 
     /**
         Determines if a canvas having the specified attributes is available.

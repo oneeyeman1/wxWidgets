@@ -2,7 +2,6 @@
 // Name:        wx/richtext/richtextbuffer.h
 // Purpose:     Buffer for wxRichTextCtrl
 // Author:      Julian Smart
-// Modified by:
 // Created:     2005-09-30
 // Copyright:   (c) Julian Smart
 // Licence:     wxWindows licence
@@ -371,7 +370,7 @@ public:
     /**
         Default constructor.
     */
-    wxTextAttrDimensions() {}
+    wxTextAttrDimensions() = default;
 
     /**
         Resets the value and flags for all dimensions.
@@ -465,7 +464,7 @@ public:
     /**
         Default constructor.
     */
-    wxTextAttrSize() {}
+    wxTextAttrSize() = default;
 
     /**
         Resets the width and height dimensions.
@@ -863,7 +862,7 @@ public:
     /**
         Default constructor.
     */
-    wxTextAttrBorders() { }
+    wxTextAttrBorders() = default;
 
     /**
         Equality operator.
@@ -1605,7 +1604,7 @@ public:
     /**
         Default constructor.
     */
-    wxRichTextAttr() {}
+    wxRichTextAttr() = default;
 
     /**
         Copy function.
@@ -1693,7 +1692,7 @@ public:
     /**
         Default constructor.
     */
-    wxRichTextProperties() {}
+    wxRichTextProperties() = default;
 
     /**
         Copy constructor.
@@ -1944,7 +1943,7 @@ public:
         Copy constructor.
     */
     wxRichTextRange(const wxRichTextRange& range) { m_start = range.m_start; m_end = range.m_end; }
-    ~wxRichTextRange() {}
+    ~wxRichTextRange() = default;
 
     /**
         Assigns @a range to this range.
@@ -3101,7 +3100,7 @@ public:
     virtual bool ExportXML(wxXmlNode* parent, wxRichTextXMLHandler* handler);
 #endif
 
-    virtual wxString GetXMLNodeName() const { return wxT("paragraphlayout"); }
+    virtual wxString GetXMLNodeName() const { return "paragraphlayout"; }
 
     virtual bool AcceptsFocus() const { return true; }
 
@@ -3692,7 +3691,7 @@ public:
 
     virtual bool Draw(wxDC& dc, wxRichTextDrawingContext& context, const wxRichTextRange& range, const wxRichTextSelection& selection, const wxRect& rect, int descent, int style);
 
-    virtual wxString GetXMLNodeName() const { return wxT("textbox"); }
+    virtual wxString GetXMLNodeName() const { return "textbox"; }
 
     virtual bool CanEditProperties() const { return true; }
 
@@ -3777,7 +3776,7 @@ public:
 
     virtual bool GetRangeSize(const wxRichTextRange& range, wxSize& size, int& descent, wxDC& dc, wxRichTextDrawingContext& context, int flags, const wxPoint& position = wxPoint(0,0), const wxSize& parentSize = wxDefaultSize, wxArrayInt* partialExtents = nullptr) const;
 
-    virtual wxString GetXMLNodeName() const { return wxT("field"); }
+    virtual wxString GetXMLNodeName() const { return "field"; }
 
     virtual bool CanEditProperties() const;
 
@@ -3800,8 +3799,8 @@ public:
 
 // Accessors
 
-    void SetFieldType(const wxString& fieldType) { GetProperties().SetProperty(wxT("FieldType"), fieldType); }
-    wxString GetFieldType() const { return GetProperties().GetPropertyString(wxT("FieldType")); }
+    void SetFieldType(const wxString& fieldType) { GetProperties().SetProperty("FieldType", fieldType); }
+    wxString GetFieldType() const { return GetProperties().GetPropertyString("FieldType"); }
 
 // Operations
 
@@ -4192,7 +4191,7 @@ public:
 
     wxRichTextLine(wxRichTextParagraph* parent);
     wxRichTextLine(const wxRichTextLine& obj);
-    virtual ~wxRichTextLine() {}
+    virtual ~wxRichTextLine() = default;
 
 // Overridables
 
@@ -4351,7 +4350,7 @@ public:
 
     virtual void CalculateRange(long start, long& end);
 
-    virtual wxString GetXMLNodeName() const { return wxT("paragraph"); }
+    virtual wxString GetXMLNodeName() const { return "paragraph"; }
 
 // Accessors
 
@@ -4566,7 +4565,7 @@ public:
     virtual bool ExportXML(wxXmlNode* parent, wxRichTextXMLHandler* handler);
 #endif
 
-    virtual wxString GetXMLNodeName() const { return wxT("text"); }
+    virtual wxString GetXMLNodeName() const { return "text"; }
 
 // Accessors
 
@@ -4833,7 +4832,7 @@ public:
     // Images can be floatable (optionally).
     virtual bool IsFloatable() const { return true; }
 
-    virtual wxString GetXMLNodeName() const { return wxT("image"); }
+    virtual wxString GetXMLNodeName() const { return "image"; }
 
 // Accessors
 
@@ -5734,7 +5733,7 @@ public:
 
     virtual int HitTest(wxDC& dc, wxRichTextDrawingContext& context, const wxPoint& pt, long& textPosition, wxRichTextObject** obj, wxRichTextObject** contextObj, int flags = 0);
 
-    virtual wxString GetXMLNodeName() const { return wxT("cell"); }
+    virtual wxString GetXMLNodeName() const { return "cell"; }
 
     virtual bool CanEditProperties() const { return true; }
 
@@ -5832,7 +5831,7 @@ public:
 
     virtual int HitTest(wxDC& dc, wxRichTextDrawingContext& context, const wxPoint& pt, long& textPosition, wxRichTextObject** obj, wxRichTextObject** contextObj, int flags = 0);
 
-    virtual wxString GetXMLNodeName() const { return wxT("table"); }
+    virtual wxString GetXMLNodeName() const { return "table"; }
 
     virtual bool Layout(wxDC& dc, wxRichTextDrawingContext& context, const wxRect& rect, const wxRect& parentRect, int style);
 
@@ -6732,8 +6731,8 @@ public:
     /**
         Constructor.
     */
-    wxRichTextRenderer() {}
-    virtual ~wxRichTextRenderer() {}
+    wxRichTextRenderer() = default;
+    virtual ~wxRichTextRenderer() = default;
 
     /**
         Draws a standard bullet, as specified by the value of GetBulletName. This function should be overridden.
@@ -6778,7 +6777,7 @@ public:
     /**
         Constructor.
     */
-    wxRichTextStdRenderer() {}
+    wxRichTextStdRenderer() = default;
 
     // Draw a standard bullet, as specified by the value of GetBulletName
     virtual bool DrawStandardBullet(wxRichTextParagraph* paragraph, wxDC& dc, const wxRichTextAttr& attr, const wxRect& rect);

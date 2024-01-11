@@ -2,7 +2,6 @@
 // Name:        wx/dcsvg.h
 // Purpose:     wxSVGFileDC
 // Author:      Chris Elliott
-// Modified by:
 // Created:
 // Copyright:   (c) Chris Elliott
 // Licence:     wxWindows licence
@@ -16,7 +15,8 @@
 #include "wx/string.h"
 #include "wx/filename.h"
 #include "wx/dc.h"
-#include "wx/scopedptr.h"
+
+#include <memory>
 
 #define wxSVGVersion wxT("v0101")
 
@@ -46,7 +46,7 @@ public:
                                wxCoord x, wxCoord y,
                                wxOutputStream& stream) const = 0;
 
-    virtual ~wxSVGBitmapHandler() {}
+    virtual ~wxSVGBitmapHandler() = default;
 };
 
 // Predefined standard bitmap handler: creates a file, stores the bitmap in
@@ -271,8 +271,8 @@ private:
     bool                m_graphics_changed;  // set by Set{Brush,Pen}()
     int                 m_width, m_height;
     double              m_dpi;
-    wxScopedPtr<wxFileOutputStream> m_outfile;
-    wxScopedPtr<wxSVGBitmapHandler> m_bmp_handler; // class to handle bitmaps
+    std::unique_ptr<wxFileOutputStream> m_outfile;
+    std::unique_ptr<wxSVGBitmapHandler> m_bmp_handler; // class to handle bitmaps
     wxSVGShapeRenderingMode m_renderingMode;
 
     // The clipping nesting level is incremented by every call to

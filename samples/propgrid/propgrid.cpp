@@ -2,7 +2,6 @@
 // Name:        samples/propgrid/propgrid.cpp
 // Purpose:     wxPropertyGrid sample
 // Author:      Jaakko Salli
-// Modified by:
 // Created:     2004-09-25
 // Copyright:   (c) Jaakko Salli
 // Licence:     wxWindows licence
@@ -70,6 +69,11 @@
 #endif
 
 #include "wx/popupwin.h"
+
+#include <random>
+
+static std::random_device s_rd;
+static std::default_random_engine s_rng(s_rd());
 
 // -----------------------------------------------------------------------
 // wxSampleMultiButtonEditor
@@ -335,7 +339,7 @@ public:
 
     SingleChoiceProperty( const wxString& label,
                           const wxString& name = wxPG_LABEL,
-                          const wxString& value = wxEmptyString )
+                          const wxString& value = wxString() )
         : wxStringProperty(label, name, value)
     {
         // Prepare choices
@@ -808,7 +812,7 @@ void FormMain::OnPropertyGridItemRightClick( wxPropertyGridEvent& event )
     }
     else
     {
-        sb->SetStatusText( wxEmptyString );
+        sb->SetStatusText( wxString() );
     }
 #endif
 }
@@ -830,7 +834,7 @@ void FormMain::OnPropertyGridItemDoubleClick( wxPropertyGridEvent& event )
     }
     else
     {
-        sb->SetStatusText ( wxEmptyString );
+        sb->SetStatusText ( wxString() );
     }
 #endif
 }
@@ -1276,7 +1280,7 @@ void FormMain::PopulateWithExamples ()
     soc.Add( "Look, it continues", 200 );
     soc.Add( "Even More", 240 );
     soc.Add( "And More", 280 );
-    soc.Add( wxEmptyString, 300 );
+    soc.Add( "", 300);
     soc.Add( "True End of the List", 320 );
 
     // Test custom colours ([] operator of wxPGChoices returns
@@ -1327,8 +1331,7 @@ void FormMain::PopulateWithExamples ()
     pg->SetPropertyHelpString( "Password",
         "Has attribute wxPG_STRING_PASSWORD set to true" );
 
-    // String editor with dir selector button. Uses wxEmptyString as name, which
-    // is allowed (naturally, in this case property cannot be accessed by name).
+    // String editor with dir selector button.
     pg->Append( new wxDirProperty( "DirProperty", wxPG_LABEL, ::wxGetUserHome()) );
     pg->SetPropertyAttribute( "DirProperty",
                               wxPG_DIALOG_TITLE,
@@ -1398,12 +1401,11 @@ void FormMain::PopulateWithExamples ()
     myTestBitmap2x.SetScaleFactor(2);
     pg->SetPropertyImage( "StringPropertyWithBitmap", wxBitmapBundle::FromBitmaps(myTestBitmap1x, myTestBitmap2x));
 
-    // this value array would be optional if values matched string indexes
-    //long flags_prop_values[] = { wxICONIZE, wxCAPTION, wxMINIMIZE_BOX, wxMAXIMIZE_BOX };
-
-    //pg->Append( wxFlagsProperty("Example of FlagsProperty","FlagsProp",
-    //    flags_prop_labels, flags_prop_values, 0, GetWindowStyle() ) );
-
+    const wxString flagsPropLabels[] = { "Bit 0", "Bit 1", "Bit 2", "Bit 3"};
+    long flagsPropValues[] = { 0x01, 0x02, 0x04, 0x08 };
+    wxPGChoices flagsPropChoices(WXSIZEOF(flagsPropLabels), flagsPropLabels, flagsPropValues);
+    pg->Append( new wxFlagsProperty("FlagsProperty", wxPG_LABEL, flagsPropChoices, 0x03 ) );
+    pg->SetPropertyAttribute("FlagsProperty", wxPG_BOOL_USE_CHECKBOX, true);
 
     // Multi choice dialog.
     wxArrayString tchoices;
@@ -1669,7 +1671,7 @@ void FormMain::PopulateWithLibraryConfig ()
     ADD_WX_LIB_CONF_GROUP("Global Features")
     ADD_WX_LIB_CONF( wxUSE_EXCEPTIONS )
     ADD_WX_LIB_CONF( wxUSE_EXTENDED_RTTI )
-    ADD_WX_LIB_CONF( wxUSE_STL )
+    ADD_WX_LIB_CONF( wxUSE_STD_CONTAINERS )
     ADD_WX_LIB_CONF( wxUSE_LOG )
     ADD_WX_LIB_CONF( wxUSE_LOGWINDOW )
     ADD_WX_LIB_CONF( wxUSE_LOGGUI )
@@ -1975,7 +1977,7 @@ FormMain::FormMain(const wxString& title)
 
     //
     // Create menu bar
-    wxMenu *menuFile = new wxMenu(wxEmptyString, wxMENU_TEAROFF);
+    wxMenu *menuFile = new wxMenu("", wxMENU_TEAROFF);
     wxMenu *menuTry = new wxMenu;
     wxMenu *menuTools1 = new wxMenu;
     wxMenu *menuTools2 = new wxMenu;
@@ -2099,7 +2101,7 @@ FormMain::FormMain(const wxString& title)
 #if wxUSE_STATUSBAR
     // create a status bar
     CreateStatusBar(1);
-    SetStatusText(wxEmptyString);
+    SetStatusText(wxString());
 #endif // wxUSE_STATUSBAR
 
     // Register all editors (SpinCtrl etc.)
@@ -2301,13 +2303,14 @@ void FormMain::OnDelPropRClick( wxCommandEvent& WXUNUSED(event) )
 {
     // Delete random property
     wxPGProperty* p = m_pPropGridManager->GetGrid()->GetRoot();
+    std::uniform_int_distribution<unsigned int> distrib(0, 1000);
 
     for (;;)
     {
         if ( !p->HasAnyChild() )
             break;
 
-        unsigned int n = static_cast<unsigned int>(rand()) % p->GetChildCount();
+        unsigned int n = distrib(s_rng) % p->GetChildCount();
         p = p->Item(n);
 
         if ( !p->IsCategory() )
@@ -2436,7 +2439,7 @@ void FormMain::OnExtendedKeyNav( wxCommandEvent& WXUNUSED(event) )
     // Up, and Down keys for navigating between properties.
     wxPropertyGrid* propGrid = m_pPropGridManager->GetGrid();
 
-    propGrid->AddActionTrigger(wxPG_ACTION_NEXT_PROPERTY,
+    propGrid->AddActionTrigger(wxPGKeyboardAction::NextProperty,
                                WXK_RETURN);
     propGrid->DedicateKey(WXK_RETURN);
 

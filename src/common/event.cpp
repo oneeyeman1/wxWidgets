@@ -2,7 +2,6 @@
 // Name:        src/common/event.cpp
 // Purpose:     Event classes
 // Author:      Julian Smart
-// Modified by:
 // Created:     01/02/97
 // Copyright:   (c) Julian Smart
 // Licence:     wxWindows licence
@@ -45,10 +44,7 @@
 #include "wx/thread.h"
 
 #if wxUSE_BASE
-    #include "wx/scopedptr.h"
-
-    wxDECLARE_SCOPED_PTR(wxEvent, wxEventPtr)
-    wxDEFINE_SCOPED_PTR(wxEvent, wxEventPtr)
+    #include <memory>
 #endif // wxUSE_BASE
 
 #if wxUSE_GUI
@@ -754,7 +750,6 @@ wxKeyEvent::wxKeyEvent(wxEventType type)
 
     m_x =
     m_y = wxDefaultCoord;
-    m_hasPosition = false;
 
     InitPropagation();
 }
@@ -917,6 +912,11 @@ wxHelpEvent::Origin wxHelpEvent::GuessOrigin(Origin origin)
 // ----------------------------------------------------------------------------
 // wxDPIChangedEvent
 // ----------------------------------------------------------------------------
+
+wxPoint wxDPIChangedEvent::Scale(wxPoint pt) const
+{
+    return wxRescaleCoord(pt).From(m_oldDPI).To(m_newDPI);
+}
 
 wxSize wxDPIChangedEvent::Scale(wxSize sz) const
 {
@@ -1341,7 +1341,7 @@ void wxEvtHandler::ProcessPendingEvents()
         }
     }
 
-    wxEventPtr event(pEvent);
+    std::unique_ptr<wxEvent> event(pEvent);
 
     // it's important we remove event from list before processing it, else a
     // nested event loop, for example from a modal dialog, might process the

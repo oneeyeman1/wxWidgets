@@ -2,7 +2,6 @@
 // Name:        src/common/dynlib.cpp
 // Purpose:     Dynamic library management
 // Author:      Guilhem Lavaux
-// Modified by:
 // Created:     20/07/98
 // Copyright:   (c) 1998 Guilhem Lavaux
 //                  2000-2005 Vadim Zeitlin
@@ -37,10 +36,6 @@
 #include "wx/filefn.h"
 #include "wx/filename.h"        // for SplitPath()
 #include "wx/platinfo.h"
-
-#include "wx/arrimpl.cpp"
-
-WX_DEFINE_USER_EXPORTED_OBJARRAY(wxDynamicLibraryDetailsArray)
 
 // ============================================================================
 // implementation

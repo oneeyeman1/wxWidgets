@@ -14,8 +14,8 @@
 #if wxUSE_TARSTREAM
 
 #include "wx/archive.h"
-#include "wx/hashmap.h"
 
+#include <unordered_map>
 
 /////////////////////////////////////////////////////////////////////////////
 // Constants
@@ -47,7 +47,7 @@ enum wxTarFormat
 class WXDLLIMPEXP_BASE wxTarNotifier
 {
 public:
-    virtual ~wxTarNotifier() { }
+    virtual ~wxTarNotifier() = default;
 
     virtual void OnEntryUpdated(class wxTarEntry& entry) = 0;
 };
@@ -149,8 +149,6 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 // wxTarInputStream
 
-WX_DECLARE_STRING_HASH_MAP(wxString, wxTarHeaderRecords);
-
 class WXDLLIMPEXP_BASE wxTarInputStream : public wxArchiveInputStream
 {
 public:
@@ -174,6 +172,8 @@ protected:
     wxFileOffset OnSysSeek(wxFileOffset seek, wxSeekMode mode) override;
 
 private:
+    using wxTarHeaderRecords = std::unordered_map<wxString, wxString>;
+
     void Init();
 
     wxArchiveEntry *DoGetNextEntry() override    { return GetNextEntry(); }
@@ -289,11 +289,9 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 // Iterators
 
-#if wxUSE_STL || defined WX_TEST_ARCHIVE_ITERATOR
 typedef wxArchiveIterator<wxTarInputStream> wxTarIter;
 typedef wxArchiveIterator<wxTarInputStream,
          std::pair<wxString, wxTarEntry*> > wxTarPairIter;
-#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -306,10 +304,8 @@ public:
     typedef wxTarInputStream  instream_type;
     typedef wxTarOutputStream outstream_type;
     typedef wxTarNotifier     notifier_type;
-#if wxUSE_STL || defined WX_TEST_ARCHIVE_ITERATOR
     typedef wxTarIter         iter_type;
     typedef wxTarPairIter     pairiter_type;
-#endif
 
     wxTarClassFactory();
 

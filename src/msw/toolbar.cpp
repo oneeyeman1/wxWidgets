@@ -2,7 +2,6 @@
 // Name:        src/msw/toolbar.cpp
 // Purpose:     wxToolBar
 // Author:      Julian Smart
-// Modified by:
 // Created:     04/01/98
 // Copyright:   (c) Julian Smart
 // Licence:     wxWindows licence
@@ -1954,7 +1953,8 @@ void wxToolBar::SetToolPacking(int packing)
 // Responds to colour changes, and passes event on to children.
 void wxToolBar::OnSysColourChanged(wxSysColourChangedEvent& event)
 {
-    wxRGBToColour(m_backgroundColour, ::GetSysColor(COLOR_BTNFACE));
+    if ( !UseBgCol() )
+        wxRGBToColour(m_backgroundColour, ::GetSysColor(COLOR_BTNFACE));
 
     // Remap the buttons
     Realize();

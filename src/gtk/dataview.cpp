@@ -25,7 +25,6 @@
 
 #include "wx/stockitem.h"
 #include "wx/popupwin.h"
-#include "wx/listimpl.cpp"
 
 #include "wx/gtk/dc.h"
 #ifndef __WXGTK3__
@@ -40,6 +39,9 @@
 #include "wx/gtk/private/list.h"
 #include "wx/gtk/private/treeview.h"
 #include "wx/gtk/private/value.h"
+
+#include <list>
+
 using namespace wxGTKImpl;
 
 class wxGtkDataViewModelNotifier;
@@ -188,9 +190,6 @@ wxGtkTreeSelectionLock *wxGtkTreeSelectionLock::ms_instance = nullptr;
 //-----------------------------------------------------------------------------
 // wxDataViewCtrlInternal
 //-----------------------------------------------------------------------------
-
-WX_DECLARE_LIST(wxDataViewItem, ItemList);
-WX_DEFINE_LIST(ItemList)
 
 class wxDataViewCtrlInternal
 {
@@ -3207,10 +3206,18 @@ static void wxGtkTreeCellDataFunc( GtkTreeViewColumn *WXUNUSED(column),
 
     wxDataViewModel *wx_model = tree_model->internal->GetDataViewModel();
 
-    cell->GtkSetCurrentItem(item);
-
     // Cells without values shouldn't be rendered at all.
-    const bool visible = cell->PrepareForItem(wx_model, item, column);
+    const bool visible = wx_model->HasValue(item, column);
+    if ( visible )
+    {
+        cell->GtkSetCurrentItem(item);
+
+        // Ignore the return value of PrepareForItem() here, if it returns
+        // false because GetValue() didn't return anything, we still want to
+        // keep this cell visible, as otherwise it wouldn't be possible to edit
+        // it either, and we do want to allow editing empty cells.
+        cell->PrepareForItem(wx_model, item, column);
+    }
 
     wxGtkValue gvalue( G_TYPE_BOOLEAN );
     g_value_set_boolean( gvalue, visible );
@@ -3218,9 +3225,6 @@ static void wxGtkTreeCellDataFunc( GtkTreeViewColumn *WXUNUSED(column),
 }
 
 } // extern "C"
-
-#include <wx/listimpl.cpp>
-WX_DEFINE_LIST(wxDataViewColumnList)
 
 wxDataViewColumn::wxDataViewColumn( const wxString &title, wxDataViewRenderer *cell,
                                     unsigned int model_column, int width,
@@ -4372,19 +4376,17 @@ wxGtkTreeModelNode *wxDataViewCtrlInternal::FindNode( const wxDataViewItem &item
     if( m_wx_model == nullptr )
         return nullptr;
 
-    ItemList list;
-    list.DeleteContents( true );
+    std::list<wxDataViewItem> list;
     wxDataViewItem it( item );
 
     while( it.IsOk() )
     {
-        wxDataViewItem * pItem = new wxDataViewItem( it );
-        list.Insert( pItem );
+        list.push_front( it );
         it = m_wx_model->GetParent( it );
     }
 
     wxGtkTreeModelNode * node = m_root;
-    for( ItemList::compatibility_iterator n = list.GetFirst(); n; n = n->GetNext() )
+    for( const auto& item : list )
     {
         if( node && node->GetNodes().GetCount() != 0 )
         {
@@ -4404,7 +4406,7 @@ wxGtkTreeModelNode *wxDataViewCtrlInternal::FindNode( const wxDataViewItem &item
             int j = 0;
             for( ; j < len; j ++)
             {
-                if( nodes[j]->GetItem() == *(n->GetData()))
+                if( nodes[j]->GetItem() == item )
                 {
                     node = nodes[j];
                     break;
@@ -4452,21 +4454,19 @@ wxDataViewCtrlInternal_FindParentNode( wxDataViewModel * model, wxGtkTreeModelNo
     if( model == nullptr )
         return nullptr;
 
-    ItemList list;
-    list.DeleteContents( true );
+    std::list<wxDataViewItem> list;
     if( !item.IsOk() )
         return nullptr;
 
     wxDataViewItem it( model->GetParent( item ) );
     while( it.IsOk() )
     {
-        wxDataViewItem * pItem = new wxDataViewItem( it );
-        list.Insert( pItem );
+        list.push_front( it );
         it = model->GetParent( it );
     }
 
     wxGtkTreeModelNode * node = treeNode;
-    for( ItemList::compatibility_iterator n = list.GetFirst(); n; n = n->GetNext() )
+    for( const auto& item : list )
     {
         if( node && node->GetNodes().GetCount() != 0 )
         {
@@ -4475,7 +4475,7 @@ wxDataViewCtrlInternal_FindParentNode( wxDataViewModel * model, wxGtkTreeModelNo
             int j = 0;
             for( ; j < len; j ++)
             {
-                if( nodes[j]->GetItem() == *(n->GetData()))
+                if( nodes[j]->GetItem() == item )
                 {
                     node = nodes[j];
                     break;
@@ -4728,8 +4728,6 @@ wxDataViewCtrl::~wxDataViewCtrl()
             GTKDisconnect(selection);
     }
 
-    m_cols.Clear();
-
     delete m_internal;
 }
 
@@ -4737,8 +4735,6 @@ void wxDataViewCtrl::Init()
 {
     m_treeview = nullptr;
     m_internal = nullptr;
-
-    m_cols.DeleteContents( true );
 
     m_uniformRowHeight = -1;
 }
@@ -4908,7 +4904,7 @@ bool wxDataViewCtrl::AppendColumn( wxDataViewColumn *col )
     if (!wxDataViewCtrlBase::AppendColumn(col))
         return false;
 
-    m_cols.Append( col );
+    m_cols.push_back( wxDataViewColumnPtr(col) );
 
     if (gtk_tree_view_column_get_sizing( GTK_TREE_VIEW_COLUMN(col->GetGtkHandle()) ) !=
            GTK_TREE_VIEW_COLUMN_FIXED)
@@ -4927,7 +4923,7 @@ bool wxDataViewCtrl::PrependColumn( wxDataViewColumn *col )
     if (!wxDataViewCtrlBase::PrependColumn(col))
         return false;
 
-    m_cols.Insert( col );
+    m_cols.insert( m_cols.begin(), wxDataViewColumnPtr(col) );
 
     if (gtk_tree_view_column_get_sizing( GTK_TREE_VIEW_COLUMN(col->GetGtkHandle()) ) !=
            GTK_TREE_VIEW_COLUMN_FIXED)
@@ -4946,7 +4942,7 @@ bool wxDataViewCtrl::InsertColumn( unsigned int pos, wxDataViewColumn *col )
     if (!wxDataViewCtrlBase::InsertColumn(pos,col))
         return false;
 
-    m_cols.Insert( pos, col );
+    m_cols.insert( m_cols.begin() + pos, wxDataViewColumnPtr(col) );
 
     if (gtk_tree_view_column_get_sizing( GTK_TREE_VIEW_COLUMN(col->GetGtkHandle()) ) !=
            GTK_TREE_VIEW_COLUMN_FIXED)
@@ -4962,7 +4958,7 @@ bool wxDataViewCtrl::InsertColumn( unsigned int pos, wxDataViewColumn *col )
 
 unsigned int wxDataViewCtrl::GetColumnCount() const
 {
-    return m_cols.GetCount();
+    return m_cols.size();
 }
 
 wxDataViewColumn* wxDataViewCtrl::GTKColumnToWX(GtkTreeViewColumn *gtk_col) const
@@ -4970,13 +4966,11 @@ wxDataViewColumn* wxDataViewCtrl::GTKColumnToWX(GtkTreeViewColumn *gtk_col) cons
     if ( !gtk_col )
         return nullptr;
 
-    wxDataViewColumnList::const_iterator iter;
-    for (iter = m_cols.begin(); iter != m_cols.end(); ++iter)
+    for (const auto& col : m_cols)
     {
-        wxDataViewColumn *col = *iter;
         if (GTK_TREE_VIEW_COLUMN(col->GetGtkHandle()) == gtk_col)
         {
-            return col;
+            return col.get();
         }
     }
 
@@ -4997,22 +4991,30 @@ bool wxDataViewCtrl::DeleteColumn( wxDataViewColumn *column )
     gtk_tree_view_remove_column( GTK_TREE_VIEW(m_treeview),
                                  GTK_TREE_VIEW_COLUMN(column->GetGtkHandle()) );
 
-    m_cols.DeleteObject( column );
+    int n = 0;
+    for (const auto& col : m_cols)
+    {
+        if (col.get() == column)
+        {
+            m_cols.erase(m_cols.begin() + n);
+            break;
+        }
+
+        ++n;
+    }
 
     return true;
 }
 
 bool wxDataViewCtrl::ClearColumns()
 {
-    wxDataViewColumnList::iterator iter;
-    for (iter = m_cols.begin(); iter != m_cols.end(); ++iter)
+    for (const auto& col : m_cols)
     {
-        wxDataViewColumn *col = *iter;
         gtk_tree_view_remove_column( GTK_TREE_VIEW(m_treeview),
                                      GTK_TREE_VIEW_COLUMN(col->GetGtkHandle()) );
     }
 
-    m_cols.Clear();
+    m_cols.clear();
 
     return true;
 }

@@ -2,7 +2,6 @@
 // Name:        src/x11/app.cpp
 // Purpose:     wxApp
 // Author:      Julian Smart
-// Modified by:
 // Created:     17/09/98
 // Copyright:   (c) Julian Smart
 // Licence:     wxWindows licence
@@ -14,7 +13,6 @@
 #include "wx/app.h"
 
 #ifndef WX_PRECOMP
-    #include "wx/hash.h"
     #include "wx/intl.h"
     #include "wx/log.h"
     #include "wx/utils.h"
@@ -217,6 +215,8 @@ wxApp::wxApp()
 #if !wxUSE_NANOX
     m_visualInfo = nullptr;
 #endif
+
+    WXAppConstructed();
 }
 
 wxApp::~wxApp()

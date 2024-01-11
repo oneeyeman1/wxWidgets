@@ -8,7 +8,7 @@
 #############################################################################
 
 wx_add_sample(access accesstest.cpp DEPENDS wxUSE_ACCESSIBILITY)
-wx_add_sample(animate anitest.cpp anitest.h DATA throbber.gif hourglass.ani DEPENDS wxUSE_ANIMATIONCTRL)
+wx_add_sample(animate anitest.cpp anitest.h DATA throbber.gif throbber_2x.gif hourglass.ani DEPENDS wxUSE_ANIMATIONCTRL)
 wx_add_sample(archive CONSOLE)
 wx_add_sample(artprov arttest.cpp artbrows.cpp artbrows.h)
 wx_add_sample(aui auidemo.cpp LIBRARIES wxaui wxhtml NAME auidemo DEPENDS wxUSE_AUI)
@@ -224,11 +224,11 @@ wx_add_sample(wrapsizer)
 
 wx_list_add_prefix(XRC_RC_FILES rc/
     aui.xpm aui.xrc
-    artprov.xpm artprov.xrc basicdlg.xpm
-    basicdlg.xrc controls.xpm controls.xrc custclas.xpm custclas.xrc
-    derivdlg.xpm derivdlg.xrc fileopen.gif filesave.gif frame.xrc
+    artprov.xpm artprov.xrc basicdlg.xpm basicdlg2.xpm
+    basicdlg.xrc controls.xpm controls.xrc custclas.xpm custclas2.xpm custclas.xrc
+    derivdlg.xpm derivdlg2.xpm derivdlg.xrc fileopen.gif filesave.gif frame.xrc
     fuzzy.gif menu.xrc platform.xpm platform.xrc quotes.gif
-    resource.xrc toolbar.xrc uncenter.xpm
+    resource.xrc toolbar.xrc uncenter.xpm uncenter2.xpm
     objref.xrc objrefdlg.xpm
     uncenter.xrc update.gif
     variable.xpm variable.xrc

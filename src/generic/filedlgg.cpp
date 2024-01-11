@@ -2,7 +2,6 @@
 // Name:        src/generic/filedlgg.cpp
 // Purpose:     wxGenericFileDialog
 // Author:      Robert Roebling
-// Modified by:
 // Created:     12/12/98
 // Copyright:   (c) Robert Roebling
 // Licence:     wxWindows licence
@@ -23,7 +22,6 @@
     #ifdef __WXMSW__
         #include "wx/msw/wrapwin.h"
     #endif
-    #include "wx/hash.h"
     #include "wx/intl.h"
     #include "wx/settings.h"
     #include "wx/log.h"

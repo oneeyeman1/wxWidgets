@@ -2,7 +2,6 @@
 // Name:        src/x11/brush.cpp
 // Purpose:     wxBrush
 // Author:      Julian Smart
-// Modified by:
 // Created:     17/09/98
 // Copyright:   (c) Julian Smart
 // Licence:     wxWindows licence
@@ -32,6 +31,7 @@ public:
     }
 
     wxBrushRefData( const wxBrushRefData& data )
+        : wxGDIRefData()
     {
         m_style = data.m_style;
         m_stipple = data.m_stipple;

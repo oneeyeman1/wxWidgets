@@ -6,12 +6,14 @@
 /////////////////////////////////////////////////////////////////////////////
 
 /**
-    @class wxHashMap
+    wxHashMap is a legacy hash table container similar to std::unordered_map.
 
-    This is a simple, type-safe, and reasonably efficient hash map class,
-    whose interface is a subset of the interface of STL containers.
-    In particular, the interface is modelled after std::map, and the various,
-    non-standard, std::hash_map (http://www.cppreference.com/wiki/stl/map/start).
+    @note As all the other legacy @ref overview_container "container classes",
+    this class shouldn't be used in the new code.
+
+    Please see https://en.cppreference.com/w/cpp/container/unordered_map for
+    the full description of this class API: in the default build, this class is
+    a thin wrapper inheriting from the standard class.
 
     Example:
     @code
@@ -93,7 +95,7 @@
     class MyKeyHash
     {
     public:
-        MyKeyHash() { }
+        MyKeyHash() = default;
 
         unsigned long operator()( const MyKey& k ) const
             {
@@ -107,7 +109,7 @@
     class MyKeyEqual
     {
     public:
-        MyKeyEqual() { }
+        MyKeyEqual() = default;
         bool operator()( const MyKey& a, const MyKey& b ) const
             {
                // compare for equality

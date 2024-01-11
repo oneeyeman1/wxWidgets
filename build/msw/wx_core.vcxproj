@@ -754,7 +754,6 @@
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)msw_%(Filename).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\src\msw\gdiimage.cpp" />
-    <ClCompile Include="..\..\src\msw\gdiobj.cpp" />
     <ClCompile Include="..\..\src\msw\gdiplus.cpp" />
     <ClCompile Include="..\..\src\msw\graphics.cpp" />
     <ClCompile Include="..\..\src\msw\headerctrl.cpp" />
@@ -1518,6 +1517,8 @@
     <ClInclude Include="..\..\include\wx\generic\creddlgg.h" />
     <ClInclude Include="..\..\include\wx\filedlgcustomize.h" />
     <ClInclude Include="..\..\include\wx\compositebookctrl.h" />
+    <ClInclude Include="..\..\include\wx\msw\darkmode.h" />
+    <ClInclude Include="..\..\include\wx\persist\combobox.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

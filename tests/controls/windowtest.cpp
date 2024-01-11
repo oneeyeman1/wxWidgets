@@ -19,13 +19,12 @@
 #include "asserthelper.h"
 #include "testableframe.h"
 #include "testwindow.h"
+#include "waitfor.h"
 
 #include "wx/uiaction.h"
 #include "wx/caret.h"
 #include "wx/cshelp.h"
 #include "wx/dcclient.h"
-#include "wx/scopedptr.h"
-#include "wx/stopwatch.h"
 #include "wx/tooltip.h"
 #include "wx/wupdlock.h"
 #include "wx/stdpaths.h"
@@ -78,6 +77,8 @@ static const unsigned char horse[] =
 };
 #endif
 
+#include <memory>
+
 class WindowTestCase
 {
 public:
@@ -88,8 +89,7 @@ public:
         // Without this, when running this test suite solo it succeeds,
         // but not when running it together with the other tests !!
         // Not needed when run under Xvfb display.
-        for ( wxStopWatch sw; sw.Time() < 50; )
-            wxYield();
+        YieldForAWhile();
     #endif
     }
 
@@ -182,8 +182,8 @@ TEST_CASE_METHOD(WindowTestCase, "Window::FocusEvent", "[window]")
 
     wxButton* button = new wxButton(wxTheApp->GetTopWindow(), wxID_ANY);
 
-    wxYield();
     button->SetFocus();
+    wxYield();
 
     CHECK( killfocus.GetCount() == 1 );
     CHECK(!m_window->HasFocus());
@@ -192,7 +192,7 @@ TEST_CASE_METHOD(WindowTestCase, "Window::FocusEvent", "[window]")
 
 TEST_CASE_METHOD(WindowTestCase, "Window::Mouse", "[window]")
 {
-    wxCursor cursor(wxCURSOR_CHAR);
+    wxCursor cursor(wxCURSOR_HAND);
     m_window->SetCursor(cursor);
 
     CHECK(m_window->GetCursor().IsOk());
@@ -515,8 +515,8 @@ TEST_CASE_METHOD(WindowTestCase, "Window::FindWindowBy", "[window]")
 TEST_CASE_METHOD(WindowTestCase, "Window::SizerErrors", "[window][sizer][error]")
 {
     wxWindow* const child = new wxWindow(m_window, wxID_ANY);
-    wxScopedPtr<wxSizer> const sizer1(new wxBoxSizer(wxHORIZONTAL));
-    wxScopedPtr<wxSizer> const sizer2(new wxBoxSizer(wxHORIZONTAL));
+    std::unique_ptr<wxSizer> const sizer1(new wxBoxSizer(wxHORIZONTAL));
+    std::unique_ptr<wxSizer> const sizer2(new wxBoxSizer(wxHORIZONTAL));
 
     REQUIRE_NOTHROW( sizer1->Add(child) );
 #ifdef __WXDEBUG__
@@ -581,13 +581,7 @@ TEST_CASE_METHOD(WindowTestCase, "Window::Refresh", "[window]")
 
     parent->RefreshRect(wxRect(150, 10, 300, 80));
 
-    for ( wxStopWatch sw; sw.Time() < 100; )
-    {
-        if ( isParentPainted )
-            break;
-
-        wxYield();
-    }
+    WaitFor("parent repaint", [&]() { return isParentPainted; }, 100);
 
     // child1 should be the only window not to receive the wxEVT_PAINT event
     // because it does not intersect with the refreshed rectangle.

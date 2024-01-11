@@ -2,7 +2,6 @@
 // Name:        validate.h
 // Purpose:     wxWidgets validation sample
 // Author:      Julian Smart
-// Modified by:
 // Created:     04/01/98
 // Copyright:   (c) Julian Smart
 // Licence:     wxWindows licence
@@ -11,7 +10,6 @@
 #include "wx/app.h"
 #include "wx/combobox.h"
 #include "wx/dialog.h"
-#include "wx/dynarray.h"
 #include "wx/frame.h"
 #include "wx/listbox.h"
 #include "wx/string.h"

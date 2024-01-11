@@ -2,7 +2,6 @@
 // Name:        wx/msw/frame.h
 // Purpose:     wxFrame class
 // Author:      Julian Smart
-// Modified by:
 // Created:     01/02/97
 // Copyright:   (c) Julian Smart
 // Licence:     wxWindows licence
@@ -130,6 +129,8 @@ protected:
     // override base class virtuals
     virtual void DoGetClientSize(int *width, int *height) const override;
     virtual void DoSetClientSize(int width, int height) override;
+
+    virtual void MSWBeforeDPIChangedEvent(const wxDPIChangedEvent& event) override;
 
 #if wxUSE_MENUS_NATIVE
     // perform MSW-specific action when menubar is changed

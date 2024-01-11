@@ -610,12 +610,18 @@ public:
     int GetC();
 
     /**
-        Returns the last number of bytes read.
+        Returns the last number of bytes read by the last input operation.
+
+        Such operations include Read(), GetC() and Peek().
     */
     virtual size_t LastRead() const;
 
     /**
         Returns the first character in the input queue without removing it.
+
+        If Peek() failed, e.g. because there is nothing more to read in the
+        stream, LastRead() will return 0 after calling it, otherwise it will
+        return 1.
     */
     virtual char Peek();
 
@@ -887,7 +893,7 @@ public:
         const wxFilterClassFactory *factory = wxFilterClassFactory::GetFirst();
 
         while (factory) {
-            list << factory->GetProtocol() << wxT("\n");
+            list << factory->GetProtocol() << "\n";
             factory = factory->GetNext();
         }
         @endcode
@@ -917,7 +923,7 @@ public:
         const wxChar *const *p;
 
         for (p = factory->GetProtocols(wxSTREAM_FILEEXT); *p; p++)
-            list << *p << wxT("\n");
+            list << *p << "\n";
         @endcode
     */
     virtual const wxChar * const* GetProtocols(wxStreamProtocolType type = wxSTREAM_PROTOCOL) const = 0;

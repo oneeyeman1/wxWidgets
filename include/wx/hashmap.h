@@ -2,7 +2,6 @@
 // Name:        wx/hashmap.h
 // Purpose:     wxHashMap class
 // Author:      Mattia Barbon
-// Modified by:
 // Created:     29/01/2002
 // Copyright:   (c) Mattia Barbon
 // Licence:     wxWindows licence
@@ -14,16 +13,22 @@
 #include "wx/string.h"
 #include "wx/wxcrt.h"
 
-#if wxUSE_STD_CONTAINERS
+// wxUSE_STD_CONTAINERS can't be used with gcc 4.8 due to a bug in its standard
+// library (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=56278) which was fixed
+// a very long time ago but is still present in the latest available versions
+// of this compiler in Ubuntu and RHEL, so don't use the standard class with it.
+#if !wxUSE_STD_CONTAINERS || defined(wxGCC_4_8)
+    #define wxNEEDS_WX_HASH_MAP
+#endif
+
+#ifndef wxNEEDS_WX_HASH_MAP
 
 #include <unordered_map>
 
 #define _WX_DECLARE_HASH_MAP( KEY_T, VALUE_T, HASH_T, KEY_EQ_T, CLASSNAME, CLASSEXP ) \
     typedef std::unordered_map< KEY_T, VALUE_T, HASH_T, KEY_EQ_T > CLASSNAME
 
-#else // !wxUSE_STD_CONTAINERS
-
-#define wxNEEDS_WX_HASH_MAP
+#else // wxNEEDS_WX_HASH_MAP
 
 #include <stddef.h>             // for ptrdiff_t
 
@@ -411,7 +416,7 @@ CLASSEXP CLASSNAME \
     typedef const_key_type& const_key_reference; \
     typedef const_pair_type& const_pair_reference; \
 public: \
-    CLASSNAME() { } \
+    CLASSNAME() = default; \
     const_key_reference operator()( const_pair_reference pair ) const { return pair.first; }\
 };
 
@@ -459,7 +464,7 @@ private:
 #endif // wxHAS_LONG_LONG_T_DIFFERENT_FROM_LONG
 
 public:
-    wxIntegerHash() noexcept { }
+    wxIntegerHash() noexcept = default;
     size_t operator()( long x ) const noexcept { return longHash( x ); }
     size_t operator()( unsigned long x ) const noexcept { return ulongHash( x ); }
     size_t operator()( int x ) const noexcept { return intHash( x ); }
@@ -477,7 +482,7 @@ public:
 // integer types
 struct WXDLLIMPEXP_BASE wxIntegerHash
 {
-    wxIntegerHash() noexcept { }
+    wxIntegerHash() noexcept = default;
     unsigned long operator()( long x ) const noexcept { return (unsigned long)x; }
     unsigned long operator()( unsigned long x ) const noexcept { return x; }
     unsigned long operator()( int x ) const noexcept { return (unsigned long)x; }
@@ -494,7 +499,7 @@ struct WXDLLIMPEXP_BASE wxIntegerHash
 
 struct WXDLLIMPEXP_BASE wxIntegerEqual
 {
-    wxIntegerEqual() noexcept { }
+    wxIntegerEqual() noexcept = default;
     bool operator()( long a, long b ) const noexcept { return a == b; }
     bool operator()( unsigned long a, unsigned long b ) const noexcept { return a == b; }
     bool operator()( int a, int b ) const noexcept { return a == b; }
@@ -510,7 +515,7 @@ struct WXDLLIMPEXP_BASE wxIntegerEqual
 // pointers
 struct WXDLLIMPEXP_BASE wxPointerHash
 {
-    wxPointerHash() noexcept { }
+    wxPointerHash() noexcept = default;
 
 #ifdef wxNEEDS_WX_HASH_MAP
     wxUIntPtr operator()( const void* k ) const noexcept { return wxPtrToUInt(k); }
@@ -521,14 +526,14 @@ struct WXDLLIMPEXP_BASE wxPointerHash
 
 struct WXDLLIMPEXP_BASE wxPointerEqual
 {
-    wxPointerEqual() noexcept { }
+    wxPointerEqual() noexcept = default;
     bool operator()( const void* a, const void* b ) const noexcept { return a == b; }
 };
 
 // wxString, char*, wchar_t*
 struct WXDLLIMPEXP_BASE wxStringHash
 {
-    wxStringHash() noexcept {}
+    wxStringHash() noexcept = default;
     unsigned long operator()( const wxString& x ) const noexcept
         { return stringHash( x.wx_str() ); }
     unsigned long operator()( const wchar_t* x ) const noexcept
@@ -542,7 +547,7 @@ struct WXDLLIMPEXP_BASE wxStringHash
 
 struct WXDLLIMPEXP_BASE wxStringEqual
 {
-    wxStringEqual() noexcept {}
+    wxStringEqual() noexcept = default;
     bool operator()( const wxString& a, const wxString& b ) const noexcept
         { return a == b; }
     bool operator()( const wxChar* a, const wxChar* b ) const noexcept

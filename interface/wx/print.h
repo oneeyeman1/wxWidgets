@@ -375,6 +375,13 @@ public:
     virtual wxPrintout* GetPrintoutForPrinting() const;
 
     /**
+        Gets the current percentage zoom level of the preview canvas.
+
+        @see SetZoom()
+    */
+    virtual int GetZoom() const;
+
+    /**
         Returns @true if the wxPrintPreview is valid, @false otherwise.
 
         It could return @false if there was a problem initializing the printer
@@ -430,6 +437,8 @@ public:
 
     /**
         Sets the percentage preview zoom, and refreshes the preview canvas accordingly.
+
+        @see GetZoom()
     */
     virtual void SetZoom(int percent);
 };
@@ -705,6 +714,14 @@ public:
         and maximum page values that the user can select, and the required page range to
         be printed.
 
+        If the user chose to print only selected pages in the MSW printing
+        dialog, then @a pageFrom and @a pageTo are used to limit the page range
+        and IsPageSelected() is called later to query whether the page is
+        selected and so should be printed.
+
+        If the user chose to print the current page, then @a pageFrom and
+        @a pageTo should be both set to the current page number.
+
         By default this returns (1, 32000) for the page minimum and maximum values, and
         (1, 1) for the required page range.
 
@@ -772,6 +789,20 @@ public:
         HasPage behaves as if the document has only one page.
     */
     virtual bool HasPage(int pageNum);
+
+    /**
+        Should be overridden to return @true if this page is selected, or @false
+        if not.
+
+        This function is called for all the pages in the valid range when the
+        user chooses "Selection" in the "Page Range" area of the printing
+        dialog under MSW. It is not currently called under the other platforms.
+
+        The default implementation always returns @false.
+
+        @since 3.3.0
+    */
+    virtual bool IsPageSelected(int pageNum);
 
     /**
         Returns @true if the printout is currently being used for previewing.

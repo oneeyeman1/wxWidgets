@@ -2,7 +2,6 @@
 // Name:        wx/generic/splitter.h
 // Purpose:     wxSplitterWindow class
 // Author:      Julian Smart
-// Modified by:
 // Created:     01/02/97
 // Copyright:   (c) Julian Smart
 // Licence:     wxWindows licence
@@ -131,6 +130,9 @@ public:
 
     // Is the window split?
     bool IsSplit() const { return (m_windowTwo != nullptr); }
+
+    // Return true if wxSP_LIVE_UPDATE is always used.
+    bool AlwaysUsesLiveUpdate() const;
 
     // Sets the border size
     void SetBorderSize(int WXUNUSED(width)) { }

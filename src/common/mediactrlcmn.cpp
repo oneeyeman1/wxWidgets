@@ -2,7 +2,6 @@
 // Name:        src/common/mediactrlcmn.cpp
 // Purpose:     wxMediaCtrl common code
 // Author:      Ryan Norton <wxprojects@comcast.net>
-// Modified by:
 // Created:     11/07/04
 // Copyright:   (c) Ryan Norton
 // Licence:     wxWindows licence
@@ -24,7 +23,6 @@
 #if wxUSE_MEDIACTRL
 
 #ifndef WX_PRECOMP
-    #include "wx/hash.h"
     #include "wx/log.h"
 #endif
 

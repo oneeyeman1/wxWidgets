@@ -2,7 +2,6 @@
 // Name:        src/osx/carbon/app.cpp
 // Purpose:     wxApp
 // Author:      Stefan Csomor
-// Modified by:
 // Created:     1998-01-01
 // Copyright:   (c) Stefan Csomor
 // Licence:     wxWindows licence
@@ -379,6 +378,8 @@ wxApp::wxApp()
     m_macCurrentEvent = nullptr ;
     m_macCurrentEventHandlerCallRef = nullptr ;
     m_macPool = sm_isEmbedded ? nullptr : new wxMacAutoreleasePool();
+
+    WXAppConstructed();
 }
 
 wxApp::~wxApp()

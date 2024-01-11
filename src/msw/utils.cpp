@@ -2,7 +2,6 @@
 // Name:        src/msw/utils.cpp
 // Purpose:     Various utilities
 // Author:      Julian Smart
-// Modified by:
 // Created:     04/01/98
 // Copyright:   (c) Julian Smart
 // Licence:     wxWindows licence
@@ -1095,6 +1094,10 @@ int wxIsWindowsServer()
     return -1;
 }
 
+// Windows 11 uses the same version as Windows 10 but its build numbers start
+// from 22000, which provides a way to test for it.
+static const int FIRST_WINDOWS11_BUILD = 22000;
+
 } // anonymous namespace
 
 wxString wxGetOsDescription()
@@ -1158,7 +1161,7 @@ wxString wxGetOsDescription()
                     break;
 
                 case 10:
-                    if (info.dwBuildNumber >= 22000)
+                    if (info.dwBuildNumber >= FIRST_WINDOWS11_BUILD)
                         str = wxIsWindowsServer() == 1
                             ? "Windows Server 2022"
                             : "Windows 11";
@@ -1269,8 +1272,9 @@ bool wxCheckOsVersion(int majorVsn, int minorVsn, int microVsn)
 wxWinVersion wxGetWinVersion()
 {
     int verMaj,
-        verMin;
-    switch ( wxGetOsVersion(&verMaj, &verMin) )
+        verMin,
+        build;
+    switch ( wxGetOsVersion(&verMaj, &verMin, &build) )
     {
         case wxOS_WINDOWS_NT:
             switch ( verMaj )
@@ -1305,7 +1309,8 @@ wxWinVersion wxGetWinVersion()
                     break;
 
                 case 10:
-                    return wxWinVersion_10;
+                    return build >= FIRST_WINDOWS11_BUILD ? wxWinVersion_11
+                                                          : wxWinVersion_10;
             }
             break;
         default:

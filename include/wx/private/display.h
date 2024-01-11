@@ -21,7 +21,7 @@
 class wxDisplayFactory
 {
 public:
-    wxDisplayFactory() { }
+    wxDisplayFactory() = default;
     virtual ~wxDisplayFactory() { ClearImpls(); }
 
     // Create the display if necessary using CreateDisplay(), otherwise just
@@ -68,6 +68,10 @@ public:
     // return the display for the given point or wxNOT_FOUND
     virtual int GetFromPoint(const wxPoint& pt) = 0;
 
+    // return the display with biggest intersection with the given rectangle or
+    // wxNOT_FOUND
+    virtual int GetFromRect(const wxRect& rect);
+
     // return the display for the given window or wxNOT_FOUND
     //
     // the window pointer must not be null (i.e. caller should check it)
@@ -100,7 +104,7 @@ class wxDisplayImpl
 {
 public:
     // virtual dtor for this base class
-    virtual ~wxDisplayImpl() { }
+    virtual ~wxDisplayImpl() = default;
 
 
     // return the full area of this display

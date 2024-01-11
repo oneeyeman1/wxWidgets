@@ -16,7 +16,6 @@
     #include "wx/log.h"
 #endif // WX_PRECOMP
 
-#include "wx/hashmap.h"
 #include "wx/evtloop.h"
 #include "wx/tooltip.h"
 #include "wx/nonownedwnd.h"
@@ -28,6 +27,8 @@
 #if wxUSE_SYSTEM_OPTIONS
     #include "wx/sysopt.h"
 #endif
+
+#include <unordered_map>
 
 // ----------------------------------------------------------------------------
 // constants
@@ -45,9 +46,14 @@ clock_t wxNonOwnedWindow::s_lastFlush = 0;
 // wxWindowMac utility functions
 // ---------------------------------------------------------------------------
 
-WX_DECLARE_HASH_MAP(WXWindow, wxNonOwnedWindowImpl*, wxPointerHash, wxPointerEqual, MacWindowMap);
+namespace
+{
+
+using MacWindowMap = std::unordered_map<WXWindow, wxNonOwnedWindowImpl*>;
 
 static MacWindowMap wxWinMacWindowList;
+
+} // anonymous namespace
 
 wxNonOwnedWindow* wxNonOwnedWindow::GetFromWXWindow( WXWindow win )
 {
@@ -533,7 +539,7 @@ bool wxNonOwnedWindow::DoSetRegionShape(const wxRegion& region)
 
 #if wxUSE_GRAPHICS_CONTEXT
 
-#include "wx/scopedptr.h"
+#include <memory>
 
 bool wxNonOwnedWindow::DoSetPathShape(const wxGraphicsPath& path)
 {
@@ -547,7 +553,7 @@ bool wxNonOwnedWindow::DoSetPathShape(const wxGraphicsPath& path)
         dc.SetBackground(*wxBLACK_BRUSH);
         dc.Clear();
 
-        wxScopedPtr<wxGraphicsContext> context(wxGraphicsContext::Create(dc));
+        std::unique_ptr<wxGraphicsContext> context(wxGraphicsContext::Create(dc));
         context->SetBrush(*wxWHITE_BRUSH);
         context->SetAntialiasMode(wxANTIALIAS_NONE);
         context->FillPath(path);

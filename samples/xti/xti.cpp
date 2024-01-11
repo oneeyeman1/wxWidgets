@@ -2,7 +2,6 @@
 // Name:        xti.cpp
 // Purpose:     eXtended RTTI support sample
 // Author:      Stefan Csomor, Francesco Montorsi
-// Modified by:
 // Created:     13/5/2007
 // Copyright:   (c) Stefan Csomor, Francesco Montorsi
 // Licence:     wxWindows licence
@@ -328,7 +327,7 @@ void RegisterFrameRTTI()
 
 wxDynamicObject* CreateFrameRTTI()
 {
-    int baseID = 100;
+    int baseID = wxID_HIGHEST;
     wxAny Params[10];
 
     // the class is now part of XTI internal table so that we can

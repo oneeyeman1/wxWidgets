@@ -74,6 +74,8 @@
 #include "wx/stack.h"
 #include "wx/sharedptr.h"
 
+#include <list>
+
 // This must be the last header included to only affect the DEFINE_GUID()
 // occurrences below but not any GUIDs declared in the standard files included
 // above.
@@ -163,7 +165,7 @@ private:
         #define wxLOAD_FUNC(dll, name)                    \
         name = (name##_t)dll.RawGetSymbol(#name);         \
             if ( !name )                                  \
-            return false;
+            return false
 
         wxLOAD_FUNC(m_dllDirect2d, D2D1CreateFactory);
         wxLOAD_FUNC(m_dllDirect2d, D2D1MakeRotateMatrix);
@@ -670,12 +672,6 @@ public:
 // A Direct2D resource manager handles the device-dependent
 // resource holders attached to it by requesting them to
 // release their resources when the API invalidates.
-// NOTE: We're using a list because we expect to have multiple
-// insertions but very rarely a traversal (if ever).
-WX_DECLARE_LIST(wxManagedResourceHolder, wxManagedResourceListType);
-#include <wx/listimpl.cpp>
-WX_DEFINE_LIST(wxManagedResourceListType);
-
 class wxD2DResourceManager: public wxD2DContextSupplier
 {
 public:
@@ -691,16 +687,15 @@ public:
 
     void ReleaseResources()
     {
-        wxManagedResourceListType::iterator it;
-        for (it = m_resources.begin(); it != m_resources.end(); ++it)
+        for (const auto& resource : m_resources )
         {
-            (*it)->ReleaseResource();
+            resource->ReleaseResource();
         }
 
         // Check that all resources were released
-        for (it = m_resources.begin(); it != m_resources.end(); ++it)
+        for (const auto& resource : m_resources )
         {
-            wxCHECK_RET(!(*it)->IsResourceAcquired(), "One or more device-dependent resources failed to release");
+            wxCHECK_RET(!resource->IsResourceAcquired(), "One or more device-dependent resources failed to release");
         }
     }
 
@@ -714,7 +709,9 @@ public:
     }
 
 private:
-    wxManagedResourceListType m_resources;
+    // NOTE: We're using a list because we expect to have multiple
+    // insertions but very rarely a traversal (if ever).
+    std::list<wxManagedResourceHolder*> m_resources;
 };
 
 // A Direct2D resource holder manages device dependent resources
@@ -1103,36 +1100,6 @@ wxCOMPtr<ID2D1Geometry> wxD2DConvertRegionToGeometry(ID2D1Factory* direct2dFacto
 
     return wxCOMPtr<ID2D1Geometry>(resultGeometry);
 }
-
-class wxD2DOffsetHelper
-{
-public:
-    explicit wxD2DOffsetHelper(wxGraphicsContext* g)
-        : m_context(g)
-    {
-        m_offset = 0;
-        if (m_context->ShouldOffset())
-        {
-            const wxGraphicsMatrix matrix(m_context->GetTransform());
-            double x = m_context->GetContentScaleFactor(), y = x;
-            matrix.TransformDistance(&x, &y);
-            m_offset = 0.5 / wxMin(fabs(x), fabs(y));
-            m_context->Translate(m_offset, m_offset);
-        }
-    }
-
-    ~wxD2DOffsetHelper()
-    {
-        if (m_offset > 0)
-        {
-            m_context->Translate(-m_offset, -m_offset);
-        }
-    }
-
-private:
-    wxGraphicsContext* m_context;
-    double m_offset;
-};
 
 bool operator==(const D2D1::Matrix3x2F& lhs, const D2D1::Matrix3x2F& rhs)
 {
@@ -2626,7 +2593,7 @@ public:
 protected:
     void DoAcquireResource() override
     {
-        HRESULT hr = GetContext()->CreateBitmapFromWicBitmap(m_srcBitmap, 0, &m_nativeResource);
+        HRESULT hr = GetContext()->CreateBitmapFromWicBitmap(m_srcBitmap, nullptr, &m_nativeResource);
         wxCHECK_HRESULT_RET(hr);
     }
 
@@ -3539,8 +3506,15 @@ protected:
             clientRect.right - clientRect.left,
             clientRect.bottom - clientRect.top);
 
+        // We explicitly specify 96 DPI (a.k.a. 100% scaling) because otherwise
+        // D2D would perform pixel scaling on its own, while we want to do it
+        // ourselves, for consistency with wxDC.
         result = m_factory->CreateHwndRenderTarget(
-            D2D1::RenderTargetProperties(),
+            D2D1::RenderTargetProperties(
+                    D2D1_RENDER_TARGET_TYPE_DEFAULT,
+                    D2D1::PixelFormat(),
+                    96.f,
+                    96.f),
             D2D1::HwndRenderTargetProperties(m_hwnd, size),
             &renderTarget);
 
@@ -3836,8 +3810,8 @@ public:
     void PushState() override {}
     void PopState() override {}
     void Flush() override {}
-    WXHDC GetNativeHDC() override { return nullptr; };
-    void ReleaseNativeHDC(WXHDC WXUNUSED(hdc)) override {};
+    WXHDC GetNativeHDC() override { return nullptr; }
+    void ReleaseNativeHDC(WXHDC WXUNUSED(hdc)) override {}
 
 protected:
     void DoDrawText(const wxString&, wxDouble, wxDouble) override {}
@@ -4000,6 +3974,8 @@ public:
     WXHDC GetNativeHDC() override;
     void ReleaseNativeHDC(WXHDC hdc) override;
 
+    class OffsetHelper;
+
 private:
     void Init();
 
@@ -4059,6 +4035,41 @@ private:
 
 private:
     wxDECLARE_NO_COPY_CLASS(wxD2DContext);
+};
+
+class wxD2DContext::OffsetHelper
+{
+public:
+    OffsetHelper(wxD2DContext* gc, const wxGraphicsPen& pen)
+    {
+        m_shouldOffset = gc->ShouldOffset();
+        if (!m_shouldOffset)
+            return;
+
+        m_gc = gc;
+        m_offsetX = m_offsetY = 0.5;
+
+        const float width = wxGetD2DPenData(pen)->GetWidth();
+        if (width <= 0)
+        {
+            // For 1-pixel pen width, offset by half a device pixel
+            double x = gc->GetContentScaleFactor(), y = x;
+            gc->GetTransform().TransformDistance(&x, &y);
+            m_offsetX /= x;
+            m_offsetY /= y;
+        }
+        gc->Translate(m_offsetX, m_offsetY);
+    }
+    ~OffsetHelper()
+    {
+        if (m_shouldOffset)
+            m_gc->Translate(-m_offsetX, -m_offsetY);
+    }
+
+private:
+    wxD2DContext* m_gc;
+    double m_offsetX, m_offsetY;
+    bool m_shouldOffset;
 };
 
 //-----------------------------------------------------------------------------
@@ -4387,7 +4398,7 @@ void wxD2DContext::StrokePath(const wxGraphicsPath& p)
     if (m_composition == wxCOMPOSITION_DEST)
         return;
 
-    wxD2DOffsetHelper helper(this);
+    OffsetHelper helper(this, m_pen);
 
     EnsureInitialized();
     AdjustRenderTargetSize();
@@ -4758,21 +4769,15 @@ bool wxD2DContext::ShouldOffset() const
     if (!m_enableOffset || m_pen.IsNull())
         return false;
 
-    wxD2DPenData* const penData = wxGetD2DPenData(m_pen);
+    const float width = wxGetD2DPenData(m_pen)->GetWidth();
 
     // always offset for 1-pixel width
-    if (penData->IsZeroWidth())
+    if (width <= 0)
         return true;
 
-    // no offset if overall scale is not odd integer
-    const wxGraphicsMatrix matrix(GetTransform());
-    double x = GetContentScaleFactor(), y = x;
-    matrix.TransformDistance(&x, &y);
-    if (!wxIsSameDouble(fmod(wxMin(fabs(x), fabs(y)), 2.0), 1.0))
-        return false;
-
     // offset if pen width is odd integer
-    return wxIsSameDouble(fmod(double(penData->GetWidth()), 2.0), 1.0);
+    const int w = int(width);
+    return (w & 1) && width == float(w);
 }
 
 void wxD2DContext::DoDrawText(const wxString& str, wxDouble x, wxDouble y)
@@ -4857,7 +4862,7 @@ void wxD2DContext::DrawRectangle(wxDouble x, wxDouble y, wxDouble w, wxDouble h)
     if (m_composition == wxCOMPOSITION_DEST)
         return;
 
-    wxD2DOffsetHelper helper(this);
+    OffsetHelper helper(this, m_pen);
 
     EnsureInitialized();
     AdjustRenderTargetSize();
@@ -4886,7 +4891,7 @@ void wxD2DContext::DrawRoundedRectangle(wxDouble x, wxDouble y, wxDouble w, wxDo
     if (m_composition == wxCOMPOSITION_DEST)
         return;
 
-    wxD2DOffsetHelper helper(this);
+    OffsetHelper helper(this, m_pen);
 
     EnsureInitialized();
     AdjustRenderTargetSize();
@@ -4916,7 +4921,7 @@ void wxD2DContext::DrawEllipse(wxDouble x, wxDouble y, wxDouble w, wxDouble h)
     if (m_composition == wxCOMPOSITION_DEST)
         return;
 
-    wxD2DOffsetHelper helper(this);
+    OffsetHelper helper(this, m_pen);
 
     EnsureInitialized();
     AdjustRenderTargetSize();

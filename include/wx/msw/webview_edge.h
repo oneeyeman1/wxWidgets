@@ -25,6 +25,8 @@ public:
 
     wxWebViewEdge();
 
+    explicit wxWebViewEdge(const wxWebViewConfiguration& config);
+
     wxWebViewEdge(wxWindow* parent,
         wxWindowID id,
         const wxString& url = wxWebViewDefaultURLStr,
@@ -92,6 +94,8 @@ public:
     virtual bool SetUserAgent(const wxString& userAgent) override;
     virtual wxString GetUserAgent() const override;
 
+    virtual bool SetProxy(const wxString& proxy) override;
+
     virtual bool RunScript(const wxString& javascript, wxString* output = nullptr) const override;
     virtual void RunScriptAsync(const wxString& javascript, void* clientData = nullptr) const override;
     virtual bool AddScriptMessageHandler(const wxString& name) override;
@@ -103,7 +107,6 @@ public:
     virtual void RegisterHandler(wxSharedPtr<wxWebViewHandler> handler) override;
 
     virtual void* GetNativeBackend() const override;
-    virtual void* GetNativeConfiguration() const override;
 
     static void MSWSetBrowserExecutableDir(const wxString& path);
 
@@ -120,12 +123,15 @@ private:
     void OnTopLevelParentIconized(wxIconizeEvent& event);
 
     wxDECLARE_DYNAMIC_CLASS(wxWebViewEdge);
+
+    friend class wxWebViewEdgeImpl;
 };
 
 class WXDLLIMPEXP_WEBVIEW wxWebViewFactoryEdge : public wxWebViewFactory
 {
 public:
     virtual wxWebView* Create() override { return new wxWebViewEdge; }
+    virtual wxWebView* CreateWithConfig(const wxWebViewConfiguration& config) override;
     virtual wxWebView* Create(wxWindow* parent,
         wxWindowID id,
         const wxString& url = wxWebViewDefaultURLStr,
@@ -138,6 +144,7 @@ public:
     }
     virtual bool IsAvailable() override;
     virtual wxVersionInfo GetVersionInfo() override;
+    virtual wxWebViewConfiguration CreateConfiguration() override;
 };
 
 #endif // wxUSE_WEBVIEW && wxUSE_WEBVIEW_EDGE && defined(__WXMSW__)

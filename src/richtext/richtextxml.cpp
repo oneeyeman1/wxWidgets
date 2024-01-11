@@ -2,7 +2,6 @@
 // Name:        src/richtext/richtextxml.cpp
 // Purpose:     XML and HTML I/O for wxRichTextCtrl
 // Author:      Julian Smart
-// Modified by:
 // Created:     2005-09-30
 // Copyright:   (c) Julian Smart
 // Licence:     wxWindows licence
@@ -32,6 +31,8 @@
 #include "wx/stopwatch.h"
 #include "wx/xml/xml.h"
 
+#include <unordered_map>
+
 // Set to 1 for slower wxXmlDocument method, 0 for faster direct method.
 // If we make wxXmlDocument::Save more efficient, we might switch to this
 // method.
@@ -50,7 +51,12 @@
 
 wxIMPLEMENT_DYNAMIC_CLASS(wxRichTextXMLHandler, wxRichTextFileHandler);
 
-wxStringToStringHashMap wxRichTextXMLHandler::sm_nodeNameToClassMap;
+namespace
+{
+
+std::unordered_map<wxString, wxString> gs_nodeNameToClassMap;
+
+} // anonymous namespace
 
 void wxRichTextXMLHandler::Init()
 {
@@ -70,10 +76,7 @@ bool wxRichTextXMLHandler::DoLoadFile(wxRichTextBuffer *buffer, wxInputStream& s
     wxXmlDocument* xmlDoc = new wxXmlDocument;
     bool success = true;
 
-    // This is the encoding to convert to (memory encoding rather than file encoding)
-    wxString encoding(wxT("UTF-8"));
-
-    if (!xmlDoc->Load(stream, encoding))
+    if (!xmlDoc->Load(stream))
     {
         buffer->ResetAndClearCommands();
         success = false;
@@ -111,12 +114,22 @@ bool wxRichTextXMLHandler::DoLoadFile(wxRichTextBuffer *buffer, wxInputStream& s
     return success;
 }
 
+void wxRichTextXMLHandler::RegisterNodeName(const wxString& nodeName, const wxString& className)
+{
+    gs_nodeNameToClassMap[nodeName] = className;
+}
+
+void wxRichTextXMLHandler::ClearNodeToClassMap()
+{
+    gs_nodeNameToClassMap.clear();
+}
+
 /// Creates an object given an XML element name
 wxRichTextObject* wxRichTextXMLHandler::CreateObjectForXMLName(wxRichTextObject* WXUNUSED(parent), const wxString& name) const
 {
     // The standard node to class mappings are added in wxRichTextModule::OnInit in richtextbuffer.cpp
-    wxStringToStringHashMap::const_iterator it = sm_nodeNameToClassMap.find(name);
-    if (it == sm_nodeNameToClassMap.end())
+    const auto it = gs_nodeNameToClassMap.find(name);
+    if (it == gs_nodeNameToClassMap.end())
         return nullptr;
     else
         return wxDynamicCast(wxCreateDynamicObject(it->second), wxRichTextObject);

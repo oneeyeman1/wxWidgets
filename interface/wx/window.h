@@ -2420,12 +2420,12 @@ public:
         problem.
 
 
-        Under wxGTK and wxOSX, you can use ::wxBG_STYLE_TRANSPARENT to obtain
+        Under wxGTK, wxOSX and wxMSW, you can use ::wxBG_STYLE_TRANSPARENT to obtain
         full transparency of the window background. Note that wxGTK supports
         this only since GTK 2.12 with a compositing manager enabled, call
         IsTransparentBackgroundSupported() to check whether this is the case,
         see the example of doing it in @ref page_samples_shaped "the shaped
-        sample".
+        sample". Under wxMSW this is supported since 3.3.0.
 
         Also, in order for @c SetBackgroundStyle(wxBG_STYLE_TRANSPARENT) to
         work, it must be called before Create(). If you're using your own
@@ -3772,6 +3772,9 @@ public:
               programmatically so you should avoid using this function in Mac
               applications (and probably avoid using it under the other
               platforms without good reason as well).
+
+        @note This function does nothing when using wxGTK with Wayland because
+              Wayland intentionally doesn't provide the required functionality.
 
         @param x
             The new x position for the cursor.

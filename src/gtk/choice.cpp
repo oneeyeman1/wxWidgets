@@ -139,15 +139,6 @@ bool wxChoice::GTKHandleFocusOut()
     return wxChoiceBase::GTKHandleFocusOut();
 }
 
-void wxChoice::GTKInsertComboBoxTextItem( unsigned int n, const wxString& text )
-{
-#ifdef __WXGTK3__
-    gtk_combo_box_text_insert_text(GTK_COMBO_BOX_TEXT(m_widget), n, text.utf8_str());
-#else
-    gtk_combo_box_insert_text( GTK_COMBO_BOX( m_widget ), n,  text.utf8_str() );
-#endif
-}
-
 int wxChoice::DoInsertItems(const wxArrayStringsAdapter & items,
                             unsigned int pos,
                             void **clientData, wxClientDataType type)
@@ -161,6 +152,12 @@ int wxChoice::DoInsertItems(const wxArrayStringsAdapter & items,
 
     int n = wxNOT_FOUND;
 
+    GtkTreeIter iter;
+    GtkTreeModel *model = gtk_combo_box_get_model( GTK_COMBO_BOX( m_widget ) );
+    GtkListStore *store = GTK_LIST_STORE( model );
+
+    gtk_widget_freeze_child_notify(m_widget);
+
     for ( int i = 0; i < count; ++i )
     {
         n = pos + i;
@@ -169,11 +166,15 @@ int wxChoice::DoInsertItems(const wxArrayStringsAdapter & items,
         if (m_strings)
             n = m_strings->Add(items[i]);
 
-        GTKInsertComboBoxTextItem( n, items[i] );
+        gtk_list_store_insert_with_values(store, &iter, n, m_stringCellIndex,
+                                          items[i].utf8_str().data(), -1);
 
         m_clientData.Insert( nullptr, n );
         AssignNewItemClientData(n, clientData, i, type);
     }
+
+    gtk_widget_thaw_child_notify(m_widget);
+
 
     InvalidateBestSize();
 
@@ -370,13 +371,36 @@ wxSize wxChoice::DoGetSizeFromTextSize(int xlen, int ylen) const
     // a GtkEntry for wxComboBox and a GtkCellView for wxChoice
     GtkWidget* childPart = gtk_bin_get_child(GTK_BIN(m_widget));
 
+#ifdef __WXGTK3__
+    // Preferred size for wxChoice can be incorrect when control is empty,
+    // work around this by temporarily adding an item.
+    GtkTreeModel* model = nullptr;
+    if (GTK_IS_CELL_VIEW(childPart))
+    {
+        model = gtk_combo_box_get_model(GTK_COMBO_BOX(m_widget));
+        GtkTreeIter iter;
+        if (gtk_tree_model_get_iter_first(model, &iter))
+            model = nullptr;
+        else
+            gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(m_widget), "Gg");
+    }
+#endif
+
     // We are interested in the difference of sizes between the whole contol
     // and its child part. I.e. arrow, separators, etc.
     GtkRequisition req;
     gtk_widget_get_preferred_size(childPart, nullptr, &req);
-    wxSize totalS = GTKGetPreferredSize(m_widget);
+    wxSize tsize(GTKGetPreferredSize(m_widget));
 
-    wxSize tsize(xlen + totalS.x - req.width, totalS.y);
+#ifdef __WXGTK3__
+    if (model)
+        gtk_list_store_clear(GTK_LIST_STORE(model));
+#endif
+
+    tsize.x -= req.width;
+    if (tsize.x < 0)
+        tsize.x = 0;
+    tsize.x += xlen;
 
     // For a wxChoice, not for wxComboBox, add some margins
     if ( !GTK_IS_ENTRY(childPart) )

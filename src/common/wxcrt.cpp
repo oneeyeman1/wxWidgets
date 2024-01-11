@@ -41,7 +41,6 @@
 
 #ifndef WX_PRECOMP
     #include "wx/string.h"
-    #include "wx/hash.h"
     #include "wx/utils.h"     // for wxMin and wxMax
     #include "wx/log.h"
 #endif
@@ -740,7 +739,10 @@ WXDLLIMPEXP_BASE int wxCRT_StrnicmpW(const wchar_t *s1, const wchar_t *s2, size_
 {
   // initialize the variables just to suppress stupid gcc warning
   wchar_t c1 = 0, c2 = 0;
-  while (n && ((c1 = wxTolower(*s1)) == (c2 = wxTolower(*s2)) ) && c1) n--, s1++, s2++;
+    while (n && ((c1 = wxTolower(*s1)) == (c2 = wxTolower(*s2)) ) && c1)
+    {
+        n--; s1++; s2++;
+    }
   if (n) {
     if (c1 < c2) return -1;
     if (c1 > c2) return 1;
@@ -1041,6 +1043,19 @@ char *strdup(const char *s)
 bool wxLocaleIsUtf8 = false; // the safer setting if not known
 #endif
 
+static bool wxIsCharsetUtf8(const char* charset)
+{
+    if ( strcmp(charset, "UTF-8") == 0 ||
+         strcmp(charset, "utf-8") == 0 ||
+         strcmp(charset, "UTF8") == 0 ||
+         strcmp(charset, "utf8") == 0 )
+    {
+        return true;
+    }
+
+    return false;
+}
+
 static bool wxIsLocaleUtf8()
 {
     // NB: we intentionally don't use wxLocale::GetSystemEncodingName(),
@@ -1051,31 +1066,28 @@ static bool wxIsLocaleUtf8()
     // GNU libc provides current character set this way (this conforms to
     // Unix98)
     const char *charset = nl_langinfo(CODESET);
-    if ( charset )
-    {
-        // "UTF-8" is used by modern glibc versions, but test other variants
-        // as well, just in case:
-        if ( strcmp(charset, "UTF-8") == 0 ||
-             strcmp(charset, "utf-8") == 0 ||
-             strcmp(charset, "UTF8") == 0 ||
-             strcmp(charset, "utf8") == 0 )
-        {
-            return true;
-        }
-    }
+    if ( charset && wxIsCharsetUtf8(charset) )
+        return true;
 #endif // HAVE_LANGINFO_H
 
-    // check if we're running under the "C" locale: it is 7bit subset
-    // of UTF-8, so it can be safely used with the UTF-8 build:
+    // check LC_CTYPE string: this also works with (sufficiently recent) MSVC
+    // and on any other system without nl_langinfo()
     const char *lc_ctype = setlocale(LC_CTYPE, nullptr);
-    if ( lc_ctype &&
-         (strcmp(lc_ctype, "C") == 0 || strcmp(lc_ctype, "POSIX") == 0) )
+    if ( lc_ctype )
     {
-        return true;
+        // check if we're running under the "C" locale: it is 7bit subset
+        // of UTF-8, so it can be safely used with the UTF-8 build:
+        if ( (strcmp(lc_ctype, "C") == 0 || strcmp(lc_ctype, "POSIX") == 0) )
+            return true;
+
+        // any other locale can also use UTF-8 encoding if it's explicitly
+        // specified
+        const char* charset = strrchr(lc_ctype, '.');
+        if ( charset && wxIsCharsetUtf8(charset + 1) )
+            return true;
     }
 
-    // we don't know what charset libc is using, so assume the worst
-    // to be safe:
+    // by default assume that we don't use UTF-8
     return false;
 }
 

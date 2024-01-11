@@ -488,7 +488,7 @@ public:
     wxXmlResourceHandlerImpl(wxXmlResourceHandler *handler);
 
     // Destructor.
-    virtual ~wxXmlResourceHandlerImpl() {}
+    virtual ~wxXmlResourceHandlerImpl() = default;
 
     // Creates an object (menu, dialog, control, ...) from an XML node.
     // Should check for validity.
@@ -558,15 +558,20 @@ public:
     // Gets a float value from the parameter.
     float GetFloat(const wxString& param, float defaultv = 0) override;
 
-    // Gets colour in HTML syntax (#RRGGBB).
-    wxColour GetColour(const wxString& param, const wxColour& defaultv = wxNullColour) override;
+    // Gets colour from the parameter, returning one of the provided default
+    // values if it's not specified depending on whether we're using light or
+    // dark mode.
+    wxColour GetColour(const wxString& param,
+                       const wxColour& defaultLight = wxNullColour,
+                       const wxColour& defaultDark = wxNullColour) override;
 
     // Gets the size (may be in dialog units).
     wxSize GetSize(const wxString& param = wxT("size"),
                    wxWindow *windowToUse = nullptr) override;
 
     // Gets the position (may be in dialog units).
-    wxPoint GetPosition(const wxString& param = wxT("pos")) override;
+    wxPoint GetPosition(const wxString& param = wxT("pos"),
+                        wxWindow *windowToUse = nullptr) override;
 
     // Gets a dimension (may be in dialog units).
     wxCoord GetDimension(const wxString& param, wxCoord defaultv = 0,
@@ -616,11 +621,19 @@ public:
     wxImageList *GetImageList(const wxString& param = wxT("imagelist")) override;
 
 #if wxUSE_ANIMATIONCTRL
+    // Get all the animations defined in the given parameter which may contain
+    // more than one semicolon-separated paths.
+    wxAnimationBundle GetAnimations(const wxString& param = wxT("animation"),
+                                    wxAnimationCtrlBase* ctrl = nullptr) override;
+
+#if WXWIN_COMPATIBILITY_3_2
+    wxDEPRECATED_MSG("Use GetAnimations() instead")
     // Gets an animation creating it using the provided control (so that it
     // will be compatible with it) if any.
     wxAnimation* GetAnimation(const wxString& param = wxT("animation"),
                               wxAnimationCtrlBase* ctrl = nullptr) override;
-#endif
+#endif // WXWIN_COMPATIBILITY_3_2
+#endif // wxUSE_ANIMATIONCTRL
 
     // Gets a font.
     wxFont GetFont(const wxString& param = wxT("font"), wxWindow* parent = nullptr) override;
@@ -689,7 +702,7 @@ public:
     // Try to create instance of given class and return it, return nullptr on
     // failure:
     virtual wxObject *Create(const wxString& className) = 0;
-    virtual ~wxXmlSubclassFactory() {}
+    virtual ~wxXmlSubclassFactory() = default;
 };
 
 

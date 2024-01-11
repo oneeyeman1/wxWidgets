@@ -55,7 +55,6 @@
 #include "wx/stdpaths.h"
 #include "wx/vector.h"
 #include "wx/scopedarray.h"
-#include "wx/scopedptr.h"
 #include "wx/scopeguard.h"
 #include "wx/except.h"
 
@@ -67,6 +66,8 @@
 #else
     #include "wx/wfstream.h"
 #endif
+
+#include <memory>
 
 // ----------------------------------------------------------------------------
 // wxWidgets macros
@@ -152,10 +153,9 @@ bool wxDocument::CanClose()
     // When the parent document closes, its children must be closed as well as
     // they can't exist without the parent, so ask them too.
 
-    DocsList::const_iterator it = m_childDocuments.begin();
-    for ( DocsList::const_iterator end = m_childDocuments.end(); it != end; ++it )
+    for ( auto& childDoc : m_childDocuments )
     {
-        if ( !(*it)->OnSaveModified() )
+        if ( !childDoc->OnSaveModified() )
         {
             // Leave the parent document opened if a child can't close.
             return false;
@@ -434,7 +434,7 @@ bool wxDocument::OnOpenDocument(const wxString& file)
 }
 
 #if wxUSE_STD_IOSTREAM
-wxSTD istream& wxDocument::LoadObject(wxSTD istream& stream)
+std::istream& wxDocument::LoadObject(std::istream& stream)
 #else
 wxInputStream& wxDocument::LoadObject(wxInputStream& stream)
 #endif
@@ -443,7 +443,7 @@ wxInputStream& wxDocument::LoadObject(wxInputStream& stream)
 }
 
 #if wxUSE_STD_IOSTREAM
-wxSTD ostream& wxDocument::SaveObject(wxSTD ostream& stream)
+std::ostream& wxDocument::SaveObject(std::ostream& stream)
 #else
 wxOutputStream& wxDocument::SaveObject(wxOutputStream& stream)
 #endif
@@ -670,7 +670,7 @@ void wxDocument::OnChangeFilename(bool notifyViews)
 bool wxDocument::DoSaveDocument(const wxString& file)
 {
 #if wxUSE_STD_IOSTREAM
-    wxSTD ofstream store(file.mb_str(), wxSTD ios::binary);
+    std::ofstream store(file.mb_str(), std::ios::binary);
     if ( !store )
 #else
     wxFileOutputStream store(file);
@@ -693,7 +693,7 @@ bool wxDocument::DoSaveDocument(const wxString& file)
 bool wxDocument::DoOpenDocument(const wxString& file)
 {
 #if wxUSE_STD_IOSTREAM
-    wxSTD ifstream store(file.mb_str(), wxSTD ios::binary);
+    std::ifstream store(file.mb_str(), std::ios::binary);
     if ( !store )
 #else
     wxFileInputStream store(file);
@@ -880,7 +880,7 @@ wxDocTemplate::~wxDocTemplate()
 wxDocument *wxDocTemplate::CreateDocument(const wxString& path, long flags)
 {
     // InitDocument() is supposed to delete the document object if its
-    // initialization fails so don't use wxScopedPtr<> here: this is fragile
+    // initialization fails so don't use unique_ptr<> here: this is fragile
     // but unavoidable because the default implementation uses CreateView()
     // which may -- or not -- create a wxView and if it does create it and its
     // initialization fails then the view destructor will delete the document
@@ -924,7 +924,7 @@ wxDocTemplate::InitDocument(wxDocument* doc, const wxString& path, long flags)
 
 wxView *wxDocTemplate::CreateView(wxDocument *doc, long flags)
 {
-    wxScopedPtr<wxView> view(DoCreateView());
+    std::unique_ptr<wxView> view(DoCreateView());
     if ( !view )
         return nullptr;
 
@@ -2247,7 +2247,7 @@ void wxDocPrintout::GetPageInfo(int *minPage, int *maxPage,
 
 #if wxUSE_STD_IOSTREAM
 
-bool wxTransferFileToStream(const wxString& filename, wxSTD ostream& stream)
+bool wxTransferFileToStream(const wxString& filename, std::ostream& stream)
 {
 #if wxUSE_FFILE
     wxFFile file(filename, wxT("rb"));
@@ -2274,7 +2274,7 @@ bool wxTransferFileToStream(const wxString& filename, wxSTD ostream& stream)
     return true;
 }
 
-bool wxTransferStreamToFile(wxSTD istream& stream, const wxString& filename)
+bool wxTransferStreamToFile(std::istream& stream, const wxString& filename)
 {
 #if wxUSE_FFILE
     wxFFile file(filename, wxT("wb"));

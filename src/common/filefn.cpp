@@ -2,7 +2,6 @@
 // Name:        src/common/filefn.cpp
 // Purpose:     File- and directory-related functions
 // Author:      Julian Smart
-// Modified by:
 // Created:     29/01/98
 // Copyright:   (c) 1998 Julian Smart
 // Licence:     wxWindows licence
@@ -34,7 +33,6 @@
 #include "wx/filename.h"
 #include "wx/dir.h"
 
-#include "wx/scopedptr.h"
 #include "wx/tokenzr.h"
 
 // there are just too many of those...
@@ -47,6 +45,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+
+#include <memory>
 
 #if defined(__WXMAC__)
     #include  "wx/osx/private.h"  // includes mac headers
@@ -669,7 +669,7 @@ bool wxDirExists(const wxString& pathName)
 
 // Get first file name matching given wild card.
 
-static wxScopedPtr<wxDir> gs_dir;
+static std::unique_ptr<wxDir> gs_dir;
 static wxString gs_dirPath;
 
 wxString wxFindFirstFile(const wxString& spec, int flags)
@@ -680,9 +680,11 @@ wxString wxFindFirstFile(const wxString& spec, int flags)
     if ( !wxEndsWithPathSeparator(gs_dirPath ) )
         gs_dirPath << wxFILE_SEP_PATH;
 
-    gs_dir.reset(new wxDir(gs_dirPath));
+    gs_dir.reset();
 
-    if ( !gs_dir->IsOpened() )
+    std::unique_ptr<wxDir> dir(new wxDir(gs_dirPath));
+
+    if ( !dir->IsOpened() )
     {
         wxLogSysError(_("Cannot enumerate files '%s'"), spec);
         return wxEmptyString;
@@ -697,16 +699,22 @@ wxString wxFindFirstFile(const wxString& spec, int flags)
     }
 
     wxString result;
-    gs_dir->GetFirst(&result, wxFileNameFromPath(spec), dirFlags);
+    dir->GetFirst(&result, wxFileNameFromPath(spec), dirFlags);
     if ( result.empty() )
         return result;
+
+    // Save the directory so that wxFindNextFile() reuses it later.
+    gs_dir = std::move(dir);
 
     return gs_dirPath + result;
 }
 
 wxString wxFindNextFile()
 {
-    wxCHECK_MSG( gs_dir, "", "You must call wxFindFirstFile before!" );
+    // If this assert is triggered, this means that you haven't called
+    // wxFindFirstFile() at all or its last call returned an empty string: in
+    // this case, wxFindNextFile() shouldn't be called.
+    wxCHECK_MSG( gs_dir, "", "You must call wxFindFirstFile successfully first!" );
 
     wxString result;
     if ( !gs_dir->GetNext(&result) || result.empty() )

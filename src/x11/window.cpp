@@ -2,7 +2,6 @@
 // Name:        src/x11/window.cpp
 // Purpose:     wxWindow
 // Author:      Julian Smart
-// Modified by:
 // Created:     17/09/98
 // Copyright:   (c) Julian Smart
 // Licence:     wxWindows licence
@@ -23,7 +22,6 @@
 #include "wx/window.h"
 
 #ifndef WX_PRECOMP
-    #include "wx/hash.h"
     #include "wx/log.h"
     #include "wx/app.h"
     #include "wx/utils.h"
@@ -1769,6 +1767,6 @@ bool wxWinModule::OnInit()
 
 void wxWinModule::OnExit()
 {
-    Display *xdisplay = wxGlobalDisplay();
-    XFreeGC( xdisplay, g_eraseGC );
+    if (Display *xdisplay = wxGlobalDisplay())
+        XFreeGC( xdisplay, g_eraseGC );
 }

@@ -16,7 +16,6 @@
 #include "wx/app.h"
 #include "wx/config.h"
 #include "wx/panel.h"
-#include "wx/scopedptr.h"
 #include "wx/menu.h"
 #include "wx/checkbox.h"
 #include "wx/listbox.h"
@@ -24,6 +23,8 @@
 #include "wx/sizer.h"
 #include "wx/artprov.h"
 #include "wx/frame.h"
+
+#include <memory>
 
 // This struct combines the settings edited in the preferences dialog.
 struct MySettings
@@ -57,7 +58,7 @@ public:
 
 private:
     class MyFrame* m_frame;
-    wxScopedPtr<wxPreferencesEditor> m_prefEditor;
+    std::unique_ptr<wxPreferencesEditor> m_prefEditor;
     MySettings m_settings;
 };
 
@@ -280,6 +281,13 @@ bool MyApp::OnInit()
 {
     if ( !wxApp::OnInit() )
         return false;
+
+#ifdef __WXGTK__
+    // Many version of wxGTK generate spurious diagnostic messages when
+    // destroying wxNotebook (or removing pages from it), allow wxWidgets to
+    // suppress them.
+    GTKAllowDiagnosticsControl();
+#endif // __WXGTK__
 
     // This will be used in the title of the preferences dialog under some
     // platforms, don't leave it as default "Preferences" because this would

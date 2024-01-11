@@ -281,7 +281,7 @@ public:
 
         @param doc A valid, i.e. non-null, document pointer ownership of which
             is passed to wxXmlResource, i.e. this pointer can't be used after
-            this function rteturns.
+            this function returns.
         @param name The name argument is optional, but may be provided if you
             plan to call Unload() later. It doesn't need to be an existing file
             or even conform to the usual form of file names as it is not
@@ -654,10 +654,16 @@ protected:
     bool GetBool(const wxString& param, bool defaultv = false);
 
     /**
-        Gets colour in HTML syntax (\#RRGGBB).
+        Gets colour from the given parameter.
+
+        If the colour is not specified, returns @a defaultLight or @a
+        defaultDark if the application is using dark mode.
+
+        Parameter @a defaultDark is only available since wxWidgets 3.3.0.
     */
     wxColour GetColour(const wxString& param,
-                       const wxColour& defaultColour = wxNullColour);
+                       const wxColour& defaultLight = wxNullColour,
+                       const wxColour& defaultDark = wxNullColour);
 
     /**
         Returns the current file system.
@@ -668,7 +674,7 @@ protected:
         Gets a dimension (may be in dialog units).
     */
     wxCoord GetDimension(const wxString& param, wxCoord defaultv = 0,
-                         wxWindow* windowToUse = 0);
+                         wxWindow* windowToUse = nullptr);
 
     /**
         Gets a direction.
@@ -809,13 +815,15 @@ protected:
 
     /**
         Gets the position (may be in dialog units).
+
+        The @a windowToUse argument is only available since wxWidgets 3.3.0.
     */
-    wxPoint GetPosition(const wxString& param = "pos");
+    wxPoint GetPosition(const wxString& param = "pos", wxWindow* windowToUse = nullptr);
 
     /**
         Gets the size (may be in dialog units).
     */
-    wxSize GetSize(const wxString& param = "size", wxWindow* windowToUse = 0);
+    wxSize GetSize(const wxString& param = "size", wxWindow* windowToUse = nullptr);
 
     /**
         Gets style flags from text in form "flag | flag2| flag3 |..."

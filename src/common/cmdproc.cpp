@@ -2,7 +2,6 @@
 // Name:        src/common/cmdproc.cpp
 // Purpose:     wxCommand and wxCommandProcessor classes
 // Author:      Julian Smart (extracted from docview.h by VZ)
-// Modified by:
 // Created:     05.11.00
 // Copyright:   (c) wxWidgets team
 // Licence:     wxWindows licence
@@ -163,11 +162,7 @@ bool wxCommandProcessor::Undo()
 bool wxCommandProcessor::Redo()
 {
     wxCommand *redoCommand = nullptr;
-    wxList::compatibility_iterator redoNode
-#if !wxUSE_STD_CONTAINERS
-        = nullptr          // just to avoid warnings
-#endif // !wxUSE_STD_CONTAINERS
-        ;
+    wxList::compatibility_iterator redoNode;
 
     if ( m_currentCommand )
     {

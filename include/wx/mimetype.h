@@ -2,7 +2,6 @@
 // Name:        wx/mimetype.h
 // Purpose:     classes and functions to manage MIME types
 // Author:      Vadim Zeitlin
-// Modified by:
 //  Chris Elliott (biol75@york.ac.uk) 5 Dec 00: write support for Win32
 // Created:     23.09.98
 // Copyright:   (c) 1998 Vadim Zeitlin <zeitlin@dptmaths.ens-cachan.fr>
@@ -73,7 +72,7 @@ public:
 class WXDLLIMPEXP_BASE wxMimeTypeCommands
 {
 public:
-    wxMimeTypeCommands() {}
+    wxMimeTypeCommands() = default;
 
     wxMimeTypeCommands(const wxArrayString& verbs,
                        const wxArrayString& commands)
@@ -161,7 +160,7 @@ public:
 
         // invalid item - use this to terminate the array passed to
         // wxMimeTypesManager::AddFallbacks
-    wxFileTypeInfo() { }
+    wxFileTypeInfo() = default;
 
     // test if this object can be used
     bool IsValid() const { return !m_mimeType.empty(); }
@@ -225,8 +224,9 @@ private:
 #endif // 0
 };
 
-WX_DECLARE_USER_EXPORTED_OBJARRAY(wxFileTypeInfo, wxArrayFileTypeInfo,
-                                  WXDLLIMPEXP_BASE);
+// This declaration is preserved solely for backwards compatibility, this type
+// is not used by wxWidgets itself.
+using wxArrayFileTypeInfo = wxBaseArray<wxFileTypeInfo>;
 
 // ----------------------------------------------------------------------------
 // wxFileType: gives access to all information about the files of given type.
@@ -252,7 +252,7 @@ public:
     {
     public:
         // ctors
-        MessageParameters() { }
+        MessageParameters() = default;
         MessageParameters(const wxString& filename,
                           const wxString& mimetype = wxEmptyString)
             : m_filename(filename), m_mimetype(mimetype) { }
@@ -268,7 +268,7 @@ public:
             { return wxEmptyString; }
 
         // virtual dtor as in any base class
-        virtual ~MessageParameters() { }
+        virtual ~MessageParameters() = default;
 
     protected:
         wxString m_filename, m_mimetype;
@@ -359,8 +359,8 @@ private:
 class WXDLLIMPEXP_BASE wxMimeTypesManagerFactory
 {
 public:
-    wxMimeTypesManagerFactory() {}
-    virtual ~wxMimeTypesManagerFactory() {}
+    wxMimeTypesManagerFactory() = default;
+    virtual ~wxMimeTypesManagerFactory() = default;
 
     virtual wxMimeTypesManagerImpl *CreateMimeTypesManagerImpl();
 
@@ -428,7 +428,7 @@ public:
     // The filetypes array should be terminated by either null entry or an
     // invalid wxFileTypeInfo (i.e. the one created with default ctor)
     void AddFallbacks(const wxFileTypeInfo *filetypes);
-    void AddFallback(const wxFileTypeInfo& ft) { m_fallbacks.Add(ft); }
+    void AddFallback(const wxFileTypeInfo& ft) { m_fallbacks.push_back(ft); }
 
     // create or remove associations
 
@@ -450,7 +450,7 @@ private:
 
     // the fallback info which is used if the information is not found in the
     // real system database
-    wxArrayFileTypeInfo m_fallbacks;
+    std::vector<wxFileTypeInfo> m_fallbacks;
 
     // the object working with the system MIME database
     wxMimeTypesManagerImpl *m_impl;

@@ -2,7 +2,6 @@
 // Name:        wx/dynlib.h
 // Purpose:     Dynamic library loading classes
 // Author:      Guilhem Lavaux, Vadim Zeitlin, Vaclav Slavik
-// Modified by:
 // Created:     20/07/98
 // Copyright:   (c) 1998 Guilhem Lavaux
 // Licence:     wxWindows licence
@@ -202,9 +201,7 @@ private:
     friend class wxDynamicLibraryDetailsCreator;
 };
 
-WX_DECLARE_USER_EXPORTED_OBJARRAY(wxDynamicLibraryDetails,
-                                  wxDynamicLibraryDetailsArray,
-                                  WXDLLIMPEXP_BASE);
+using wxDynamicLibraryDetailsArray = wxBaseArray<wxDynamicLibraryDetails>;
 
 // ----------------------------------------------------------------------------
 // wxDynamicLibrary: represents a handle to a DLL/shared object

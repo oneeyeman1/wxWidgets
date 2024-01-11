@@ -2,7 +2,6 @@
 // Name:        src/propgrid/manager.cpp
 // Purpose:     wxPropertyGridManager
 // Author:      Jaakko Salli
-// Modified by:
 // Created:     2005-01-14
 // Copyright:   (c) Jaakko Salli
 // Licence:     wxWindows licence
@@ -24,10 +23,8 @@
 #include "wx/dcbuffer.h" // for wxALWAYS_NATIVE_DOUBLE_BUFFER
 #include "wx/headerctrl.h" // for wxPGHeaderCtrl
 
-// This define is necessary to prevent macro clearing
-#define __wxPG_SOURCE_FILE__
-
 #include "wx/propgrid/manager.h"
+#include "wx/propgrid/private.h"
 
 
 #define wxPG_MAN_ALTERNATE_BASE_ID          11249 // Needed for wxID_ANY madness
@@ -637,6 +634,8 @@ bool wxPropertyGridManager::Create( wxWindow *parent,
     Init2(style);
 
     SetInitialSize(size);
+    // Create controls
+    RecreateControls();
 
     return res;
 }
@@ -765,9 +764,6 @@ void wxPropertyGridManager::Init2( int style )
     // NB: Even if wxID_ANY is used, this doesn't connect properly in wxPython
     //     (see wxPropertyGridManager::ProcessEvent).
     ReconnectEventHandlers(wxID_NONE, m_pPropGrid->GetId());
-
-    // Optional initial controls.
-    m_width = -12345;
 
     m_iFlags |= wxPG_MAN_FL_INITIALIZED;
 
@@ -1457,8 +1453,8 @@ void wxPropertyGridManager::RepaintDescBoxDecorations( wxDC& dc,
 
 void wxPropertyGridManager::UpdateDescriptionBox( int new_splittery, int new_width, int new_height )
 {
-    int use_hei = new_height-1;
-    int use_width = new_width-6;
+    int use_hei = wxMax(1, new_height - 1);
+    int use_width = wxMax(1, new_width - 6);
 
     // Fix help control positions.
     int cap_y = new_splittery+m_splitterHeight+5;
@@ -2151,9 +2147,6 @@ void wxPropertyGridManager::OnResize( wxSizeEvent& WXUNUSED(event) )
     int width, height;
 
     GetClientSize(&width, &height);
-
-    if ( m_width == -12345 )
-        RecreateControls();
 
     RecalculatePositions(width, height);
 

@@ -79,7 +79,7 @@ private:
 
 #ifndef SWIG
 private:
-    wxDECLARE_DYNAMIC_CLASS_NO_ASSIGN(wxAuiNotebookEvent);
+    wxDECLARE_DYNAMIC_CLASS_NO_ASSIGN_DEF_COPY(wxAuiNotebookEvent);
 #endif
 };
 
@@ -109,10 +109,19 @@ public:
 };
 
 
-#ifndef SWIG
-WX_DECLARE_USER_EXPORTED_OBJARRAY(wxAuiNotebookPage, wxAuiNotebookPageArray, WXDLLIMPEXP_AUI);
-WX_DECLARE_USER_EXPORTED_OBJARRAY(wxAuiTabContainerButton, wxAuiTabContainerButtonArray, WXDLLIMPEXP_AUI);
-#endif
+// These legacy classes can't be just typedefs as they can be (and are)
+// forward-declared in the existing code.
+class wxAuiNotebookPageArray : public wxBaseArray<wxAuiNotebookPage>
+{
+public:
+    using wxBaseArray<wxAuiNotebookPage>::wxBaseArray;
+};
+
+class wxAuiTabContainerButtonArray : public wxBaseArray<wxAuiTabContainerButton>
+{
+public:
+    using wxBaseArray<wxAuiTabContainerButton>::wxBaseArray;
+};
 
 
 class WXDLLIMPEXP_AUI wxAuiTabContainer
@@ -180,6 +189,9 @@ protected:
     wxRect m_rect;
     size_t m_tabOffset;
     unsigned int m_flags;
+
+private:
+    int GetCloseButtonState(const wxAuiNotebookPage& page) const;
 };
 
 
@@ -200,6 +212,9 @@ public:
     bool IsDragging() const { return m_isDragging; }
 
     void SetRect(const wxRect& rect) { wxAuiTabContainer::SetRect(rect, this); }
+
+    // Internal helper.
+    void DoShowTab(int idx);
 
 protected:
     // choose the default border for this window
@@ -223,16 +238,22 @@ protected:
     void OnChar(wxKeyEvent& event);
     void OnCaptureLost(wxMouseCaptureLostEvent& evt);
     void OnSysColourChanged(wxSysColourChangedEvent& event);
+    void OnDpiChanged(wxDPIChangedEvent& event);
 
 protected:
 
-    wxPoint m_clickPt;
-    wxWindow* m_clickTab;
-    bool m_isDragging;
-    wxAuiTabContainerButton* m_hoverButton;
-    wxAuiTabContainerButton* m_pressedButton;
+    wxPoint m_clickPt = wxDefaultPosition;
+    wxWindow* m_clickTab = nullptr;
+    bool m_isDragging = false;
+
+    wxAuiTabContainerButton* m_hoverButton = nullptr;
+    wxAuiTabContainerButton* m_pressedButton = nullptr;
 
     void SetHoverTab(wxWindow* wnd);
+
+private:
+    // Reset dragging-related fields above to their initial values.
+    void DoEndDragging();
 
 #ifndef SWIG
     wxDECLARE_CLASS(wxAuiTabCtrl);

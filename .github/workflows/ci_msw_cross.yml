@@ -6,6 +6,7 @@ on:
     branches:
       - master
     paths-ignore:
+      - '.circleci/**'
       - '.github/ISSUE_TEMPLATE/**'
       - '.github/workflows/ci.yml'
       - '.github/workflows/ci_cmake.yml'
@@ -31,6 +32,7 @@ on:
     branches:
       - master
     paths-ignore:
+      - '.circleci/**'
       - '.github/ISSUE_TEMPLATE/**'
       - '.github/workflows/ci.yml'
       - '.github/workflows/ci_cmake.yml'
@@ -66,16 +68,23 @@ jobs:
     # versions of MinGW and Wine and is simpler to test with locally than the
     # bespoke container used by GitHub Actions by default.
     runs-on: ubuntu-latest
-    container: debian:testing-slim
+    container: debian:${{ matrix.debian_release }}-slim
     name: ${{ matrix.name }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - name: wxMSW 64 bits
-            configure_flags: --enable-stl --disable-compat30
+            debian_release: testing
+            configure_flags: --disable-compat32
           - name: wxMSW 32 bits
+            # Testing doesn't have 32 bit support any more.
+            debian_release: stable
             triplet: i686-w64-mingw32
+          - name: wxMSW/Univ
+            debian_release: testing
+            configure_flags: --enable-universal --disable-compat32 --disable-debug --disable-optimise
+            minimal: true
     env:
       wxCONFIGURE_FLAGS: ${{ matrix.configure_flags }}
 
@@ -100,14 +109,12 @@ jobs:
 
           case "${HOST_TRIPLET}" in
             x86_64-w64-mingw32)
-              packages="$packages g++-mingw-w64-x86-64 wine64 xvfb"
-              winerun=wine64
+              packages="$packages g++-mingw-w64-x86-64 wine wine64 xvfb"
               ;;
 
             i686-w64-mingw32)
               dpkg --add-architecture i386
               packages="$packages g++-mingw-w64-i686 wine32 libgl1:i386 xvfb:i386"
-              winerun=wine
               ;;
 
             *)
@@ -119,7 +126,7 @@ jobs:
           apt-get -q -o=Dpkg::Use-Pty=0 update
           apt-get -q -o=Dpkg::Use-Pty=0 -y install $packages
 
-          echo "wxTEST_RUNNER=${winerun}" >> $GITHUB_ENV
+          echo "wxTEST_RUNNER=wine" >> $GITHUB_ENV
 
       - name: Checkout
         uses: actions/checkout@v3
@@ -169,17 +176,26 @@ jobs:
         run: |
           make $wxMAKE_ARGS "CXXFLAGS=$wxMAKEFILE_ERROR_CXXFLAGS"
 
+      - name: Install and test
+        run: |
+          make install
+          make -C samples/minimal -f makefile.unx "CXXFLAGS=$wxMAKEFILE_ERROR_CXXFLAGS"
+
+
       - name: Build samples
+        if: matrix.minimal != true
         run: |
           make $wxMAKE_ARGS "CXXFLAGS=$wxMAKEFILE_ERROR_CXXFLAGS" samples
 
       - name: Build tests
+        if: matrix.minimal != true
         working-directory: tests
         run: |
           make $wxMAKE_ARGS failtest
           make $wxMAKE_ARGS "CXXFLAGS=$wxMAKEFILE_ERROR_CXXFLAGS"
 
       - name: Launch Xvfb
+        if: matrix.minimal != true
         run: |
           echo 'Launching Xvfb...'
           mkdir /tmp/.X11-unix
@@ -209,6 +225,7 @@ jobs:
           echo 'DISPLAY=:10' >> $GITHUB_ENV
 
       - name: Run non-GUI tests
+        if: matrix.minimal != true
         working-directory: tests
         run: |
           # Some tests are currently failing under Wine while they pass under
@@ -236,6 +253,7 @@ jobs:
           $wxTEST_RUNNER ./test.exe "${excluded_tests[@]}"
 
       - name: Run GUI tests
+        if: matrix.minimal != true
         working-directory: tests
         run: |
           # Same as for the non-GUI test above, except many more GUI tests fail

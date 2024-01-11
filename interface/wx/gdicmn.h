@@ -227,11 +227,19 @@ public:
     wxRealPoint& operator +=(const wxSize& sz);
     wxRealPoint& operator -=(const wxSize& sz);
 
-    wxSize operator /(const wxRealPoint& sz, int factor);
-    wxSize operator *(const wxRealPoint& sz, int factor);
-    wxSize operator *(int factor, const wxSize& sz);
-    wxSize& operator /=(int factor);
-    wxSize& operator *=(int factor);
+    wxRealPoint operator -(const wxRealPoint& pt);
+
+    wxRealPoint operator /(const wxRealPoint& sz, int divisor);
+    wxRealPoint operator *(const wxRealPoint& sz, int factor);
+    wxRealPoint operator *(int factor, const wxRealPoint& pt);
+    wxRealPoint& operator /=(int divisor);
+    wxRealPoint& operator *=(int factor);
+
+    wxRealPoint operator /(const wxRealPoint& pt, double divisor);
+    wxRealPoint operator *(const wxRealPoint& pt, double factor);
+    wxRealPoint operator *(double factor, const wxRealPoint& pt);
+    wxRealPoint& operator /=(double divisor);
+    wxRealPoint& operator *=(double factor);
     ///@}
 
     /**
@@ -307,6 +315,8 @@ public:
         centred in both directions but if @a dir includes only @c wxVERTICAL or
         only @c wxHORIZONTAL, then it is only centered in this direction while
         the other component of its position remains unchanged.
+
+        @see MakeCenteredIn()
     */
     wxRect CentreIn(const wxRect& r, int dir = wxBOTH) const;
     wxRect CenterIn(const wxRect& r, int dir = wxBOTH) const;
@@ -474,6 +484,20 @@ public:
         equal to 0 and @false otherwise.
     */
     bool IsEmpty() const;
+
+    /**
+        Center this rectangle inside the given rectangle @a r.
+
+        By default, rectangle is centred in both directions but if @a dir
+        includes only @c wxVERTICAL or only @c wxHORIZONTAL, then it is only
+        centered in this direction while the other component of its position
+        remains unchanged.
+
+        @see CenterIn()
+
+        @since 3.3.0
+     */
+    void MakeCenteredIn(const wxRect& r, int dir = wxBOTH);
 
     ///@{
     /**
@@ -715,11 +739,19 @@ public:
     wxPoint& operator +=(const wxSize& sz);
     wxPoint& operator -=(const wxSize& sz);
 
-    wxSize operator /(const wxPoint& sz, int factor);
-    wxSize operator *(const wxPoint& sz, int factor);
-    wxSize operator *(int factor, const wxSize& sz);
-    wxSize& operator /=(int factor);
-    wxSize& operator *=(int factor);
+    wxPoint operator -(const wxPoint& pt);
+
+    wxPoint operator /(const wxPoint& sz, int divisor);
+    wxPoint operator *(const wxPoint& sz, int factor);
+    wxPoint operator *(int factor, const wxPoint& sz);
+    wxPoint& operator /=(int divisor);
+    wxPoint& operator *=(int factor);
+
+    wxPoint operator /(const wxPoint& pt, double divisor);
+    wxPoint operator *(const wxPoint& pt, double factor);
+    wxPoint operator *(double factor, const wxPoint& pt);
+    wxPoint& operator /=(double divisor);
+    wxPoint& operator *=(double factor);
     ///@}
 
 
@@ -1020,6 +1052,14 @@ public:
         @see DecTo()
     */
     void IncTo(const wxSize& size);
+
+    /**
+        Returns @true if this size is at least as big as the other one in both
+        directions.
+
+        @since 3.3.0
+     */
+    bool IsAtLeast(const wxSize& size) const;
 
     /**
         Returns @true if neither of the size object components is equal to -1,

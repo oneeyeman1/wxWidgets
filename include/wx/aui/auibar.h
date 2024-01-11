@@ -2,7 +2,6 @@
 // Name:        wx/aui/toolbar.h
 // Purpose:     wxaui: wx advanced user interface - docking window manager
 // Author:      Benjamin I. Williams
-// Modified by:
 // Created:     2008-08-04
 // Copyright:   (C) Copyright 2005, Kirix Corporation, All Rights Reserved.
 // Licence:     wxWindows Library Licence, Version 3.1
@@ -98,7 +97,7 @@ private:
     int m_toolId;
 
 private:
-    wxDECLARE_DYNAMIC_CLASS_NO_ASSIGN(wxAuiToolBarEvent);
+    wxDECLARE_DYNAMIC_CLASS_NO_ASSIGN_DEF_COPY(wxAuiToolBarEvent);
 };
 
 
@@ -176,7 +175,7 @@ public:
     void SetDisabledBitmap(const wxBitmapBundle& bmp) { m_disabledBitmap = bmp; }
     const wxBitmapBundle& GetDisabledBitmapBundle() const { return m_disabledBitmap; }
     wxBitmap GetDisabledBitmapFor(wxWindow* wnd) const { return m_disabledBitmap.GetBitmapFor(wnd); }
-    wxBitmap GetDisabledBitmap() const { return GetBitmapFor(m_window); }
+    wxBitmap GetDisabledBitmap() const { return GetDisabledBitmapFor(m_window); }
 
     // Return the bitmap for the current state, normal or disabled.
     wxBitmap GetCurrentBitmapFor(wxWindow* wnd) const;
@@ -254,9 +253,7 @@ private:
     int m_alignment;             // sizer alignment flag, defaults to wxCENTER, may be wxEXPAND or any other
 };
 
-#ifndef SWIG
-WX_DECLARE_USER_EXPORTED_OBJARRAY(wxAuiToolBarItem, wxAuiToolBarItemArray, WXDLLIMPEXP_AUI);
-#endif
+using wxAuiToolBarItemArray = wxBaseObjectArray<wxAuiToolBarItem>;
 
 
 
@@ -267,8 +264,8 @@ class WXDLLIMPEXP_AUI wxAuiToolBarArt
 {
 public:
 
-    wxAuiToolBarArt() { }
-    virtual ~wxAuiToolBarArt() { }
+    wxAuiToolBarArt() = default;
+    virtual ~wxAuiToolBarArt() = default;
 
     virtual wxAuiToolBarArt* Clone() = 0;
     virtual void SetFlags(unsigned int flags) = 0;
@@ -696,7 +693,6 @@ protected:
     bool m_gripperVisible;
     bool m_overflowVisible;
 
-    bool RealizeHelper(wxClientDC& dc, bool horizontal);
     static bool IsPaneValid(long style, const wxAuiPaneInfo& pane);
     bool IsPaneValid(long style) const;
     void SetArtFlags() const;
@@ -707,6 +703,8 @@ protected:
 private:
     // Common part of OnLeaveWindow() and OnCaptureLost().
     void DoResetMouseState();
+
+    wxSize RealizeHelper(wxClientDC& dc, wxOrientation orientation);
 
     wxDECLARE_EVENT_TABLE();
     wxDECLARE_CLASS(wxAuiToolBar);

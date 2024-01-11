@@ -37,7 +37,7 @@
         aboutInfo.SetName("MyApp");
         aboutInfo.SetVersion(MY_APP_VERSION_STRING);
         aboutInfo.SetDescription(_("My wxWidgets-based application!"));
-        aboutInfo.SetCopyright("(C) 1992-2023");
+        aboutInfo.SetCopyright("(C) 1992-2024");
         aboutInfo.SetWebSite("http://myapp.org");
         aboutInfo.AddDeveloper("My Self");
 
@@ -354,7 +354,7 @@ public:
         info.SetName(_("My Program"));
         info.SetVersion(_("1.2.3 Beta"));
         info.SetDescription(_("This program does something great."));
-        info.SetCopyright(wxT("(C) 2007 Me <my@email.addre.ss>"));
+        info.SetCopyright("(C) 2007 Me <my@email.addre.ss>");
 
         wxAboutBox(info);
     }

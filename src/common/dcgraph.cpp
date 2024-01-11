@@ -2,7 +2,6 @@
 // Name:        src/common/dcgraph.cpp
 // Purpose:     graphics context methods common to all platforms
 // Author:      Stefan Csomor
-// Modified by:
 // Created:
 // Copyright:   (c) Stefan Csomor
 // Licence:     wxWindows licence
@@ -213,9 +212,6 @@ wxGCDCImpl::wxGCDCImpl(wxDC* owner, int)
 
 void wxGCDCImpl::CommonInit()
 {
-    m_mm_to_pix_x = mm2pt;
-    m_mm_to_pix_y = mm2pt;
-
     m_isClipBoxValid = false;
 
     m_logicalFunctionSupported = true;
@@ -431,15 +427,6 @@ void wxGCDCImpl::DoSetDeviceClippingRegion( const wxRegion &region )
 void wxGCDCImpl::DestroyClippingRegion()
 {
     m_graphicContext->ResetClip();
-#if !defined(__WXOSX__) && !defined(__WXMSW__) && !defined(__WXGTK__)
-    // currently the clip eg of a window extends to the area between the scrollbars
-    // so we must explicitly make sure it only covers the area we want it to draw
-    int width, height ;
-    GetOwner()->GetSize( &width , &height ) ;
-    wxPoint clipOrig = DeviceToLogical(0, 0);
-    wxSize clipDim = DeviceToLogicalRel(width, height);
-    m_graphicContext->Clip(clipOrig.x, clipOrig.y, clipDim.x, clipDim.y);
-#endif // !__WXOSX__ && !__WXMSW__ && !__WXGTK__
 
     m_graphicContext->SetPen( m_pen );
     m_graphicContext->SetBrush( m_brush );
@@ -980,13 +967,14 @@ void wxGCDCImpl::DoDrawRectangle(wxCoord x, wxCoord y, wxCoord w, wxCoord h)
 
     CalcBoundingBox(wxPoint(x, y), wxSize(w, h));
 
-    if (m_pen.IsOk() && m_pen.GetStyle() != wxPENSTYLE_TRANSPARENT && m_pen.GetWidth() > 0)
+    if (m_pen.IsNonTransparent())
     {
-        // outline is one pixel larger than what raster-based wxDC implementations draw
-        w -= 1;
-        h -= 1;
+        if (w < 0) { w = -w; x -= w; }
+        if (h < 0) { h = -h; y -= h; }
+        w--;
+        h--;
     }
-    m_graphicContext->DrawRectangle(x,y,w,h);
+    m_graphicContext->DrawRectangle(x, y, w, h);
 }
 
 void wxGCDCImpl::DoDrawRoundedRectangle(wxCoord x, wxCoord y,
@@ -1007,13 +995,14 @@ void wxGCDCImpl::DoDrawRoundedRectangle(wxCoord x, wxCoord y,
 
     CalcBoundingBox(wxPoint(x, y), wxSize(w, h));
 
-    if (m_pen.IsOk() && m_pen.GetStyle() != wxPENSTYLE_TRANSPARENT && m_pen.GetWidth() > 0)
+    if (m_pen.IsNonTransparent())
     {
-        // outline is one pixel larger than what raster-based wxDC implementations draw
-        w -= 1;
-        h -= 1;
+        if (w < 0) { w = -w; x -= w; }
+        if (h < 0) { h = -h; y -= h; }
+        w--;
+        h--;
     }
-    m_graphicContext->DrawRoundedRectangle( x,y,w,h,radius);
+    m_graphicContext->DrawRoundedRectangle(x, y, w, h, radius);
 }
 
 void wxGCDCImpl::DoDrawEllipse(wxCoord x, wxCoord y, wxCoord w, wxCoord h)
@@ -1059,7 +1048,7 @@ bool wxGCDCImpl::DoStretchBlit(
     wxCompositionMode mode = TranslateRasterOp(logical_func);
     if ( mode == wxCOMPOSITION_INVALID )
     {
-        // Do *not* assert here, this function is often call from wxEVT_PAINT
+        // Do *not* assert here, this function is often called from wxEVT_PAINT
         // handler and asserting will just result in a reentrant call to the
         // same handler and a crash.
         return false;

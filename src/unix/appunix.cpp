@@ -16,13 +16,14 @@
 #endif
 
 #include "wx/evtloop.h"
-#include "wx/scopedptr.h"
 #include "wx/unix/private/wakeuppipe.h"
 #include "wx/private/fdiodispatcher.h"
 #include "wx/private/fdioeventloopsourcehandler.h"
 
 #include <signal.h>
 #include <unistd.h>
+
+#include <memory>
 
 #ifndef SA_RESTART
     // don't use for systems which don't define it (at least VMS and QNX)
@@ -114,15 +115,13 @@ void wxAppConsole::HandleSignal(int signal)
 
 void wxAppConsole::CheckSignal()
 {
-    for ( SignalHandlerHash::iterator it = m_signalHandlerHash.begin();
-          it != m_signalHandlerHash.end();
-          ++it )
+    for ( const auto& kv : m_signalHandlerHash )
     {
-        int sig = it->first;
+        int sig = kv.first;
         if ( sigismember(&m_signalsCaught, sig) )
         {
             sigdelset(&m_signalsCaught, sig);
-            (it->second)(sig);
+            (kv.second)(sig);
         }
     }
 }
@@ -134,7 +133,7 @@ wxFDIOHandler* wxAppConsole::RegisterSignalWakeUpPipe(wxFDIODispatcher& dispatch
     // we need a bridge to wxFDIODispatcher
     //
     // TODO: refactor the code so that only wxEventLoopSourceHandler is used
-    wxScopedPtr<wxFDIOHandler>
+    std::unique_ptr<wxFDIOHandler>
         fdioHandler(new wxFDIOEventLoopSourceHandler(m_signalWakeUpPipe));
 
     if ( !dispatcher.RegisterFD

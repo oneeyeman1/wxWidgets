@@ -11,12 +11,13 @@
 #define _WX_PRIVATE_WEBREQUEST_H_
 
 #include "wx/ffile.h"
-#include "wx/hashmap.h"
-#include "wx/scopedptr.h"
 
 #include "wx/private/refcountermt.h"
 
-WX_DECLARE_STRING_HASH_MAP(wxString, wxWebRequestHeaderMap);
+#include <memory>
+#include <unordered_map>
+
+using wxWebRequestHeaderMap = std::unordered_map<wxString, wxString>;
 
 // Default buffer size when a fixed-size buffer must be used.
 const int wxWEBREQUEST_BUFFER_SIZE = 64 * 1024;
@@ -31,7 +32,7 @@ const int wxWEBREQUEST_BUFFER_SIZE = 64 * 1024;
 class wxWebAuthChallengeImpl : public wxRefCounterMT
 {
 public:
-    virtual ~wxWebAuthChallengeImpl() { }
+    virtual ~wxWebAuthChallengeImpl() = default;
 
     wxWebAuthChallenge::Source GetSource() const { return m_source; }
 
@@ -54,7 +55,7 @@ private:
 class wxWebRequestImpl : public wxRefCounterMT
 {
 public:
-    virtual ~wxWebRequestImpl() { }
+    virtual ~wxWebRequestImpl() = default;
 
     void SetHeader(const wxString& name, const wxString& value)
     { m_headers[name] = value; }
@@ -63,7 +64,7 @@ public:
 
     void SetData(const wxString& text, const wxString& contentType, const wxMBConv& conv = wxConvUTF8);
 
-    bool SetData(wxScopedPtr<wxInputStream>& dataStream, const wxString& contentType, wxFileOffset dataSize = wxInvalidOffset);
+    bool SetData(std::unique_ptr<wxInputStream>& dataStream, const wxString& contentType, wxFileOffset dataSize = wxInvalidOffset);
 
     void SetStorage(wxWebRequest::Storage storage) { m_storage = storage; }
 
@@ -111,7 +112,7 @@ protected:
     wxWebRequest::Storage m_storage;
     wxWebRequestHeaderMap m_headers;
     wxFileOffset m_dataSize;
-    wxScopedPtr<wxInputStream> m_dataStream;
+    std::unique_ptr<wxInputStream> m_dataStream;
     bool m_peerVerifyDisabled;
 
     wxWebRequestImpl(wxWebSession& session,
@@ -167,6 +168,8 @@ public:
 
     virtual wxString GetMimeType() const;
 
+    virtual wxString GetContentType() const;
+
     virtual int GetStatus() const = 0;
 
     virtual wxString GetStatusText() const = 0;
@@ -204,7 +207,7 @@ private:
 
     wxMemoryBuffer m_readBuffer;
     mutable wxFFile m_file;
-    mutable wxScopedPtr<wxInputStream> m_stream;
+    mutable std::unique_ptr<wxInputStream> m_stream;
 
     wxDECLARE_NO_COPY_CLASS(wxWebResponseImpl);
 };
@@ -220,7 +223,7 @@ public:
 
     virtual bool Initialize() { return true; }
 
-    virtual ~wxWebSessionFactory() { }
+    virtual ~wxWebSessionFactory() = default;
 };
 
 // ----------------------------------------------------------------------------
@@ -230,7 +233,7 @@ public:
 class wxWebSessionImpl : public wxRefCounterMT
 {
 public:
-    virtual ~wxWebSessionImpl() { }
+    virtual ~wxWebSessionImpl() = default;
 
     virtual wxWebRequestImplPtr
     CreateRequest(wxWebSession& session,

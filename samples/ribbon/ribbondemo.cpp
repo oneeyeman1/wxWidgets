@@ -2,7 +2,6 @@
 // Name:        ribbondemo.cpp
 // Purpose:     wxRibbon: Ribbon user interface - sample/test program
 // Author:      Peter Cawley
-// Modified by:
 // Created:     2009-05-25
 // Copyright:   (C) Copyright 2009, Peter Cawley
 // Licence:     wxWindows Library Licence
@@ -323,9 +322,20 @@ MyFrame::MyFrame()
         toolbar->AddHybridTool(ID_POSITION_TOP, position_top_xpm,
                                 "Align the ribbonbar horizontally\nat the top\nfor demonstration purposes");
         toolbar->AddSeparator();
-        toolbar->AddHybridTool(wxID_PRINT, wxArtProvider::GetBitmap(wxART_PRINT, wxART_OTHER, wxSize(16, 15)),
+        wxRibbonToolBarToolBase* print_tool;
+        print_tool = toolbar->AddHybridTool(wxID_PRINT, wxArtProvider::GetBitmap(wxART_PRINT, wxART_OTHER, wxSize(16, 15)),
                                 "This is the Print button tooltip\ndemonstrating a tooltip");
         toolbar->SetRows(2, 3);
+
+        size_t tool_pos = toolbar->GetToolPos(wxID_PRINT);
+        if (toolbar->GetToolCount() != (tool_pos+1))
+        {
+            wxLogError("wxRibbonToolBar::GetToolPos(int) or wxRibbonToolBar::GetToolCount() is broken");
+        }
+        else if (toolbar->GetToolByPos(tool_pos) != print_tool)
+        {
+            wxLogError("wxRibbonToolBar::GetToolByPos(size_t) is broken");
+        }
 
         wxRibbonPanel *selection_panel = new wxRibbonPanel(home, wxID_ANY, "Selection", wxBitmap(selection_panel_xpm));
         wxRibbonButtonBar *selection = new wxRibbonButtonBar(selection_panel);

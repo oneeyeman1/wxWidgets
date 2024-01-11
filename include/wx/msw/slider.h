@@ -2,7 +2,6 @@
 // Name:        wx/msw/slider.h
 // Purpose:     wxSlider class implementation using trackbar control
 // Author:      Julian Smart
-// Modified by:
 // Created:     01/02/97
 // Copyright:   (c) Julian Smart
 // Licence:     wxWindows licence
@@ -123,8 +122,8 @@ protected:
     WXHBRUSH DoMSWControlColor(WXHDC pDC, wxColour colBg, WXHWND hWnd) override;
 
     virtual void MSWUpdateFontOnDPIChange(const wxSize& newDPI) override;
+    virtual void MSWBeforeDPIChangedEvent(const wxDPIChangedEvent& event) override;
 
-    void OnDPIChanged(wxDPIChangedEvent& event);
 
     // the labels windows, if any
     wxSubwindows  *m_labels;

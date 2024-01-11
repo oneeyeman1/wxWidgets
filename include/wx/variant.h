@@ -2,7 +2,6 @@
 // Name:        wx/variant.h
 // Purpose:     wxVariant class, container for any type
 // Author:      Julian Smart
-// Modified by:
 // Created:     10/09/98
 // Copyright:   (c) Julian Smart
 // Licence:     wxWindows licence
@@ -57,17 +56,17 @@ class WXDLLIMPEXP_BASE wxVariantData : public wxObjectRefData
 {
     friend class wxVariant;
 public:
-    wxVariantData() { }
+    wxVariantData() = default;
 
     // Override these to provide common functionality
     virtual bool Eq(wxVariantData& data) const = 0;
 
 #if wxUSE_STD_IOSTREAM
-    virtual bool Write(wxSTD ostream& WXUNUSED(str)) const { return false; }
+    virtual bool Write(std::ostream& WXUNUSED(str)) const { return false; }
 #endif
     virtual bool Write(wxString& WXUNUSED(str)) const { return false; }
 #if wxUSE_STD_IOSTREAM
-    virtual bool Read(wxSTD istream& WXUNUSED(str)) { return false; }
+    virtual bool Read(std::istream& WXUNUSED(str)) { return false; }
 #endif
     virtual bool Read(wxString& WXUNUSED(str)) { return false; }
     // What type is it? Return a string name.
@@ -88,7 +87,7 @@ protected:
     // Protected dtor should make some incompatible code
     // break more louder. That is, they should do data->DecRef()
     // instead of delete data.
-    virtual ~wxVariantData() { }
+    virtual ~wxVariantData() = default;
 };
 
 /*
@@ -486,7 +485,7 @@ expdecl wxVariant& operator << ( wxVariant &variant, const classname &object );
 class classname##VariantData: public wxVariantData \
 { \
 public:\
-    classname##VariantData() {} \
+    classname##VariantData() = default; \
     classname##VariantData( const classname &value ) : m_value(value) { } \
 \
     classname &GetValue() { return m_value; } \

@@ -2,7 +2,6 @@
 // Name:        wx/ribbon/bar.h
 // Purpose:     Top-level component of the ribbon-bar-style interface
 // Author:      Peter Cawley
-// Modified by:
 // Created:     2009-05-23
 // Copyright:   (C) Peter Cawley
 // Licence:     wxWindows licence
@@ -92,9 +91,12 @@ public:
     bool shown;
 };
 
-#ifndef SWIG
-WX_DECLARE_USER_EXPORTED_OBJARRAY(wxRibbonPageTabInfo, wxRibbonPageTabInfoArray, WXDLLIMPEXP_RIBBON);
-#endif
+// This must be a class because it's forward declared.
+class wxRibbonPageTabInfoArray : public wxBaseArray<wxRibbonPageTabInfo>
+{
+public:
+    using wxBaseArray<wxRibbonPageTabInfo>::wxBaseArray;
+};
 
 class WXDLLIMPEXP_RIBBON wxRibbonBar : public wxRibbonControl
 {

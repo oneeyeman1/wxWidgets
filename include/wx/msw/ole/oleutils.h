@@ -2,7 +2,6 @@
 // Name:        wx/msw/ole/oleutils.h
 // Purpose:     OLE helper routines, OLE debugging support &c
 // Author:      Vadim Zeitlin
-// Modified by:
 // Created:     19.02.1998
 // Copyright:   (c) 1998 Vadim Zeitlin <zeitlin@dptmaths.ens-cachan.fr>
 // Licence:     wxWindows licence
@@ -33,7 +32,9 @@
 // initialize/cleanup OLE
 // ----------------------------------------------------------------------------
 
-// call OleInitialize() or CoInitialize[Ex]() depending on the platform
+// Simple wrapper for OleInitialize().
+//
+// Avoid using it directly, use wxOleInitializer instead.
 //
 // return true if ok, false otherwise
 inline bool wxOleInitialize()
@@ -102,7 +103,7 @@ public:
 
     // retrieve a copy of our string - caller must SysFreeString() it later!
     wxDEPRECATED_MSG("use Copy() instead")
-    wxNODISCARD BSTR Get() const { return Copy(); }
+    BSTR Get() const { return Copy(); }
 private:
     // actual string
     BSTR m_bstrBuf;
@@ -125,7 +126,7 @@ public:
     virtual bool Eq(wxVariantData& data) const override;
 
 #if wxUSE_STD_IOSTREAM
-    virtual bool Write(wxSTD ostream& str) const override;
+    virtual bool Write(std::ostream& str) const override;
 #endif
     virtual bool Write(wxString& str) const override;
 
@@ -151,7 +152,7 @@ public:
     virtual bool Eq(wxVariantData& data) const override;
 
 #if wxUSE_STD_IOSTREAM
-    virtual bool Write(wxSTD ostream& str) const override;
+    virtual bool Write(std::ostream& str) const override;
 #endif
     virtual bool Write(wxString& str) const override;
 
@@ -179,7 +180,7 @@ public:
     virtual bool Eq(wxVariantData& data) const override;
 
 #if wxUSE_STD_IOSTREAM
-    virtual bool Write(wxSTD ostream& str) const override;
+    virtual bool Write(std::ostream& str) const override;
 #endif
     virtual bool Write(wxString& str) const override;
 

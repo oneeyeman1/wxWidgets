@@ -16,6 +16,9 @@
 #include "wx/archive.h"
 #include "wx/filename.h"
 
+#include <memory>
+#include <vector>
+
 // some methods from wxZipInputStream and wxZipOutputStream stream do not get
 // exported/imported when compiled with Mingw versions before 3.4.2. So they
 // are imported/exported individually as a workaround
@@ -130,7 +133,7 @@ class WXDLLIMPEXP_FWD_BASE wxZipInputStream;
 class WXDLLIMPEXP_BASE wxZipNotifier
 {
 public:
-    virtual ~wxZipNotifier() { }
+    virtual ~wxZipNotifier() = default;
 
     virtual void OnEntryUpdated(wxZipEntry& entry) = 0;
 };
@@ -287,8 +290,6 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 // wxZipOutputStream
 
-WX_DECLARE_LIST_WITH_DECL(wxZipEntry, wxZipEntryList_, class WXDLLIMPEXP_BASE);
-
 class WXDLLIMPEXP_BASE wxZipOutputStream : public wxArchiveOutputStream
 {
 public:
@@ -354,7 +355,7 @@ private:
     class wxStoredOutputStream *m_store;
     class wxZlibOutputStream2 *m_deflate;
     class wxZipStreamLink *m_backlink;
-    wxZipEntryList_ m_entries;
+    std::vector<std::unique_ptr<wxZipEntry>> m_entries;
     char *m_initialData;
     size_t m_initialSize;
     wxZipEntry *m_pending;
@@ -458,11 +459,9 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 // Iterators
 
-#if wxUSE_STL || defined WX_TEST_ARCHIVE_ITERATOR
 typedef wxArchiveIterator<wxZipInputStream> wxZipIter;
 typedef wxArchiveIterator<wxZipInputStream,
          std::pair<wxString, wxZipEntry*> > wxZipPairIter;
-#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -475,10 +474,8 @@ public:
     typedef wxZipInputStream  instream_type;
     typedef wxZipOutputStream outstream_type;
     typedef wxZipNotifier     notifier_type;
-#if wxUSE_STL || defined WX_TEST_ARCHIVE_ITERATOR
     typedef wxZipIter         iter_type;
     typedef wxZipPairIter     pairiter_type;
-#endif
 
     wxZipClassFactory();
 

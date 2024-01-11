@@ -18,7 +18,8 @@
 #endif // WX_PRECOMP
 
 #include "wx/list.h"
-#include "wx/scopedptr.h"
+
+#include <memory>
 
 // --------------------------------------------------------------------------
 // test class
@@ -199,7 +200,7 @@ void ListsTestCase::wxListCtorTest()
         CPPUNIT_ASSERT( list2.GetCount() == 2 );
         CPPUNIT_ASSERT( Baz::GetNumber() == 2 );
 
-#if !wxUSE_STL
+#if !wxUSE_STD_CONTAINERS
         list1.DeleteContents(true);
 #else
         WX_CLEAR_LIST(wxListBazs, list1);
@@ -243,7 +244,7 @@ void ElementsListNode::DeleteData()
 TEST_CASE("wxWindowList::Find", "[list]")
 {
     ListElement* const el = new ListElement(17);
-    wxScopedPtr<ListElementBase> elb(el);
+    std::unique_ptr<ListElementBase> elb(el);
 
     ElementsList l;
     l.Append(el);

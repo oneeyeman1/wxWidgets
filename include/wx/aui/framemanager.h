@@ -2,7 +2,6 @@
 // Name:        wx/aui/framemanager.h
 // Purpose:     wxaui: wx advanced user interface - docking window manager
 // Author:      Benjamin I. Williams
-// Modified by:
 // Created:     2005-05-17
 // Copyright:   (C) Copyright 2005, Kirix Corporation, All Rights Reserved.
 // Licence:     wxWindows Library Licence, Version 3.1
@@ -52,7 +51,8 @@ enum wxAuiManagerOption
     wxAUI_MGR_DEFAULT = wxAUI_MGR_ALLOW_FLOATING |
                         wxAUI_MGR_TRANSPARENT_HINT |
                         wxAUI_MGR_HINT_FADE |
-                        wxAUI_MGR_NO_VENETIAN_BLINDS_FADE
+                        wxAUI_MGR_NO_VENETIAN_BLINDS_FADE |
+                        wxAUI_MGR_LIVE_RESIZE
 };
 
 
@@ -128,13 +128,10 @@ class wxAuiDockInfo;
 class wxAuiDockArt;
 class wxAuiManagerEvent;
 
-#ifndef SWIG
-WX_DECLARE_USER_EXPORTED_OBJARRAY(wxAuiDockInfo, wxAuiDockInfoArray, WXDLLIMPEXP_AUI);
-WX_DECLARE_USER_EXPORTED_OBJARRAY(wxAuiDockUIPart, wxAuiDockUIPartArray, WXDLLIMPEXP_AUI);
-WX_DECLARE_USER_EXPORTED_OBJARRAY(wxAuiPaneInfo, wxAuiPaneInfoArray, WXDLLIMPEXP_AUI);
-WX_DEFINE_USER_EXPORTED_ARRAY_PTR(wxAuiPaneInfo*, wxAuiPaneInfoPtrArray, class WXDLLIMPEXP_AUI);
-WX_DEFINE_USER_EXPORTED_ARRAY_PTR(wxAuiDockInfo*, wxAuiDockInfoPtrArray, class WXDLLIMPEXP_AUI);
-#endif // SWIG
+using wxAuiDockUIPartArray = wxBaseArray<wxAuiDockUIPart>;
+using wxAuiDockInfoArray = wxBaseArray<wxAuiDockInfo>;
+using wxAuiDockInfoPtrArray = wxBaseArray<wxAuiDockInfo*>;
+using wxAuiPaneInfoPtrArray = wxBaseArray<wxAuiPaneInfo*>;
 
 extern WXDLLIMPEXP_AUI wxAuiDockInfo wxAuiNullDockInfo;
 extern WXDLLIMPEXP_AUI wxAuiPaneInfo wxAuiNullPaneInfo;
@@ -164,7 +161,7 @@ public:
         DefaultPane();
     }
 
-    ~wxAuiPaneInfo() {}
+    ~wxAuiPaneInfo() = default;
 
     // Write the safe parts of a newly loaded PaneInfo structure "source" into "this"
     // used on loading perspectives etc.
@@ -396,6 +393,13 @@ public:
 };
 
 
+// Note that this one must remain a wxBaseObjectArray, i.e. store pointers to
+// heap-allocated objects, as it is returned by wxAuiManager::GetPane() and the
+// existing code expects these pointers to remain valid even if the array is
+// modified.
+using wxAuiPaneInfoArray = wxBaseObjectArray<wxAuiPaneInfo>;
+
+
 
 class WXDLLIMPEXP_FWD_AUI wxAuiFloatingFrame;
 
@@ -413,7 +417,7 @@ public:
     void SetFlags(unsigned int flags);
     unsigned int GetFlags() const;
 
-    static bool AlwaysUsesLiveResize();
+    static bool AlwaysUsesLiveResize(const wxWindow* window = nullptr);
     bool HasLiveResize() const;
 
     void SetManagedWindow(wxWindow* managedWnd);
@@ -481,8 +485,6 @@ public:
 
     virtual void ShowHint(const wxRect& rect);
     virtual void HideHint();
-
-    void OnHintActivate(wxActivateEvent& event);
 
 public:
 
@@ -615,6 +617,11 @@ protected:
 
     void* m_reserved;
 
+private:
+    // Return the index in m_uiParts corresponding to the current value of
+    // m_actionPart. If m_actionPart is null, returns wxNOT_FOUND.
+    int GetActionPartIndex() const;
+
 #ifndef SWIG
     wxDECLARE_EVENT_TABLE();
     wxDECLARE_CLASS(wxAuiManager);
@@ -664,7 +671,7 @@ public:
 
 #ifndef SWIG
 private:
-    wxDECLARE_DYNAMIC_CLASS_NO_ASSIGN(wxAuiManagerEvent);
+    wxDECLARE_DYNAMIC_CLASS_NO_ASSIGN_DEF_COPY(wxAuiManagerEvent);
 #endif
 };
 

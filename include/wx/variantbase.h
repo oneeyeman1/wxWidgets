@@ -67,8 +67,8 @@ public:
     { }
 
 #if wxUSE_STD_IOSTREAM
-    virtual bool Write(wxSTD ostream& WXUNUSED(str)) const { return false; }
-    virtual bool Read(wxSTD istream& WXUNUSED(str)) { return false; }
+    virtual bool Write(std::ostream& WXUNUSED(str)) const { return false; }
+    virtual bool Read(std::istream& WXUNUSED(str)) { return false; }
 #endif
     virtual bool Write(wxString& WXUNUSED(str)) const { return false; }
     virtual bool Read(wxString& WXUNUSED(str)) { return false; }
@@ -99,7 +99,7 @@ protected:
     // Protected dtor should make some incompatible code
     // break more louder. That is, they should do data->DecRef()
     // instead of delete data.
-    virtual ~wxVariantData() {}
+    virtual ~wxVariantData() = default;
 
 private:
     int m_count;
@@ -109,7 +109,7 @@ template<typename T> class wxVariantDataT : public wxVariantData
 {
 public:
     wxVariantDataT(const T& d) : m_data(d) {}
-    virtual ~wxVariantDataT() {}
+    virtual ~wxVariantDataT() = default;
 
     // get a ref to the stored data
     T & Get() { return m_data; }
@@ -252,9 +252,6 @@ protected:
     wxVariantData*  m_data;
     wxString        m_name;
 };
-
-#include "wx/dynarray.h"
-WX_DECLARE_OBJARRAY_WITH_DECL(wxVariantBase, wxVariantBaseArray, class WXDLLIMPEXP_BASE);
 
 
 // templated streaming, every type must have their specialization for these methods

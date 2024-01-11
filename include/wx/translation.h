@@ -19,9 +19,19 @@
 
 #include "wx/buffer.h"
 #include "wx/language.h"
-#include "wx/hashmap.h"
 #include "wx/strconv.h"
-#include "wx/scopedptr.h"
+
+// This is a hack, but this header used to include wx/hashmap.h which, in turn,
+// included wx/wxcrt.h and it turns out quite some existing code relied on it
+// by using the CRT wrapper functions declared there without explicitly
+// including that header, so keep including it from here to let it continue to
+// compile.
+#include "wx/wxcrt.h"
+
+#include <memory>
+#include <unordered_map>
+
+using wxTranslationsHashMap = std::unordered_map<wxString, wxString>;
 
 // ============================================================================
 // global decls
@@ -75,7 +85,7 @@ class WXDLLIMPEXP_FWD_BASE wxTranslationsLoader;
 class WXDLLIMPEXP_FWD_BASE wxLocale;
 
 class wxPluralFormsCalculator;
-wxDECLARE_SCOPED_PTR(wxPluralFormsCalculator, wxPluralFormsCalculatorPtr)
+using wxPluralFormsCalculatorPtr = std::unique_ptr<wxPluralFormsCalculator>;
 
 // ----------------------------------------------------------------------------
 // wxMsgCatalog corresponds to one loaded message catalog.
@@ -86,7 +96,7 @@ class WXDLLIMPEXP_BASE wxMsgCatalog
 public:
     // Ctor is protected, because CreateFromXXX functions must be used,
     // but destruction should be unrestricted
-    ~wxMsgCatalog() = default;
+    ~wxMsgCatalog();
 
     // load the catalog from disk or from data; caller is responsible for
     // deleting them if not null
@@ -103,16 +113,14 @@ public:
     const wxString *GetString(const wxString& sz, unsigned n = UINT_MAX, const wxString& ct = wxEmptyString) const;
 
 protected:
-    wxMsgCatalog(const wxString& domain)
-        : m_pNext(nullptr), m_domain(domain)
-    {}
+    wxMsgCatalog(const wxString& domain);
 
 private:
     // variable pointing to the next element in a linked list (or nullptr)
     wxMsgCatalog *m_pNext;
     friend class wxTranslations;
 
-    wxStringToStringHashMap m_messages; // all messages in the catalog
+    wxTranslationsHashMap   m_messages; // all messages in the catalog
     wxString                m_domain;   // name of the domain
 
     wxPluralFormsCalculatorPtr m_pluralFormsCalculator;
@@ -143,16 +151,24 @@ public:
     // get languages available for this app
     wxArrayString GetAvailableTranslations(const wxString& domain) const;
 
-    // find best translation language for given domain
+    // find best available translation language for given domain
+    wxString GetBestAvailableTranslation(const wxString& domain);
+
     wxString GetBestTranslation(const wxString& domain, wxLanguage msgIdLanguage);
     wxString GetBestTranslation(const wxString& domain,
                                 const wxString& msgIdLanguage = wxASCII_STR("en"));
+
+    // add catalog for the given domain returning true if it could be found by
+    // wxTranslationsLoader
+    bool AddAvailableCatalog(const wxString& domain);
 
     // add standard wxWidgets catalog ("wxstd")
     bool AddStdCatalog();
 
     // add catalog with given domain name and language, looking it up via
-    // wxTranslationsLoader
+    // wxTranslationsLoader -- unlike AddAvailableCatalog(), this function also
+    // returns true if this catalog is not needed at all because msgIdLanguage
+    // is an acceptable language to use directly
     bool AddCatalog(const wxString& domain,
                     wxLanguage msgIdLanguage = wxLANGUAGE_ENGLISH_US);
 
@@ -178,7 +194,7 @@ public:
 
 private:
     // perform loading of the catalog via m_loader
-    bool LoadCatalog(const wxString& domain, const wxString& lang, const wxString& msgIdLang);
+    bool LoadCatalog(const wxString& domain, const wxString& lang);
 
     // find catalog by name in a linked list, return nullptr if !found
     wxMsgCatalog *FindCatalog(const wxString& domain) const;
@@ -196,7 +212,7 @@ private:
     // In addition to keeping all the catalogs in the linked list, we also
     // store them in a hash map indexed by the domain name to allow finding
     // them by name efficiently.
-    WX_DECLARE_HASH_MAP(wxString, wxMsgCatalog *, wxStringHash, wxStringEqual, wxMsgCatalogMap);
+    using wxMsgCatalogMap = std::unordered_map<wxString, wxMsgCatalog*>;
     wxMsgCatalogMap m_catalogMap;
 };
 
@@ -205,8 +221,8 @@ private:
 class WXDLLIMPEXP_BASE wxTranslationsLoader
 {
 public:
-    wxTranslationsLoader() {}
-    virtual ~wxTranslationsLoader() {}
+    wxTranslationsLoader() = default;
+    virtual ~wxTranslationsLoader() = default;
 
     virtual wxMsgCatalog *LoadCatalog(const wxString& domain,
                                       const wxString& lang) = 0;

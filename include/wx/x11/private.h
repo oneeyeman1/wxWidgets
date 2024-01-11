@@ -2,7 +2,6 @@
 // Name:        wx/x11/private.h
 // Purpose:     Private declarations for X11 port
 // Author:      Julian Smart
-// Modified by:
 // Created:     17/09/98
 // Copyright:   (c) Julian Smart
 // Licence:     wxWindows licence
@@ -12,7 +11,6 @@
 #define _WX_PRIVATE_H_
 
 #include "wx/defs.h"
-#include "wx/hashmap.h"
 #include "wx/utils.h"
 #if defined( __cplusplus ) && defined( __VMS )
 #pragma message disable nosimpint
@@ -27,9 +25,9 @@
 // Include common declarations
 #include "wx/x11/privx.h"
 
-#if wxUSE_PANGO
 #include <pango/pango.h>
-#endif
+
+#include <unordered_map>
 
 class WXDLLIMPEXP_FWD_CORE wxMouseEvent;
 class WXDLLIMPEXP_FWD_CORE wxKeyEvent;
@@ -40,7 +38,7 @@ class WXDLLIMPEXP_FWD_CORE wxWindow;
 // corresponding to the window for this widget
 // ----------------------------------------------------------------------------
 
-WX_DECLARE_HASH_MAP(Window, wxWindow *, wxIntegerHash, wxIntegerEqual, wxWindowHash);
+using wxWindowHash = std::unordered_map<Window, wxWindow*>;
 
 // these hashes are defined in app.cpp
 extern wxWindowHash *wxWidgetHashTable;

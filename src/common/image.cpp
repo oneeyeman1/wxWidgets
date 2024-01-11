@@ -16,7 +16,6 @@
 
 #ifndef WX_PRECOMP
     #include "wx/log.h"
-    #include "wx/hash.h"
     #include "wx/utils.h"
     #include "wx/math.h"
     #include "wx/module.h"
@@ -30,6 +29,8 @@
 
 // For memcpy
 #include <string.h>
+
+#include <unordered_set>
 
 // make the code compile with either wxFile*Stream or wxFFile*Stream:
 #define HAS_FILE_STREAMS (wxUSE_STREAMS && (wxUSE_FILE || wxUSE_FFILE))
@@ -227,6 +228,10 @@ void wxImage::Destroy()
 
 void wxImage::Clear(unsigned char value)
 {
+    wxCHECK_RET( IsOk(), wxT("invalid image") );
+
+    AllocExclusive();
+
     memset(M_IMGDATA->m_data, value, M_IMGDATA->m_width*M_IMGDATA->m_height*3);
 }
 
@@ -1736,6 +1741,14 @@ wxImage::Paste(const wxImage & image, int x, int y,
                         float light_left = (alpha_target_data[i] / 255.0f) * (1.0f - source_alpha);
                         float result_alpha = source_alpha + light_left;
                         alpha_target_data[i] = (unsigned char)((result_alpha * 255) + 0.5f);
+                        if (result_alpha <= 0)
+                        {
+                            int c = 3 * i;
+                            target_data[c++] = 0;
+                            target_data[c++] = 0;
+                            target_data[c] = 0;
+                            continue;
+                        }
                         for (int c = 3 * i; c < 3 * (i + 1); c++)
                         {
                             target_data[c] =
@@ -3509,8 +3522,8 @@ wxImage::FindFirstUnusedColour(unsigned char *r,
 //
 unsigned long wxImage::CountColours( unsigned long stopafter ) const
 {
-    wxHashTable h;
-    wxObject dummy;
+    std::unordered_set<unsigned long> h;
+
     unsigned char *p;
     unsigned long size, nentries;
 
@@ -3527,9 +3540,8 @@ unsigned long wxImage::CountColours( unsigned long stopafter ) const
         b = *(p++);
         key = wxImageHistogram::MakeKey(r, g, b);
 
-        if (h.Get(key) == nullptr)
+        if (h.insert(key).second)
         {
-            h.Put(key, &dummy);
             nentries++;
         }
     }

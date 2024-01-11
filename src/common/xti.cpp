@@ -2,7 +2,6 @@
 // Name:        src/common/xti.cpp
 // Purpose:     runtime metadata information (extended class info)
 // Author:      Stefan Csomor
-// Modified by:
 // Created:     27/07/03
 // Copyright:   (c) 1997 Julian Smart
 //              (c) 2003 Stefan Csomor
@@ -18,7 +17,6 @@
 #ifndef WX_PRECOMP
     #include "wx/object.h"
     #include "wx/list.h"
-    #include "wx/hash.h"
 #endif
 
 #include "wx/xti.h"

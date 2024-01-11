@@ -2,7 +2,6 @@
 // Name:        src/osx/core/mimetype.cpp
 // Purpose:     Mac OS X implementation for wx MIME-related classes
 // Author:      Neil Perkins
-// Modified by:
 // Created:     2010-05-15
 // Copyright:   (C) 2010 Neil Perkins
 // Licence:     wxWindows licence
@@ -322,7 +321,7 @@ wxFileType *wxMimeTypesManagerImpl::GetFileTypeFromExtension(const wxString& ext
 {
     wxString uti;
 
-    const TagMap::const_iterator extItr = m_extMap.find( ext );
+    const auto extItr = m_extMap.find( ext );
 
     if( extItr == m_extMap.end() )
     {
@@ -342,7 +341,7 @@ wxFileType *wxMimeTypesManagerImpl::GetFileTypeFromMimeType(const wxString& mime
 {
     wxString uti;
 
-    const TagMap::const_iterator mimeItr = m_mimeMap.find( mimeType );
+    const auto mimeItr = m_mimeMap.find( mimeType );
 
     if( mimeItr == m_mimeMap.end() )
     {
@@ -359,7 +358,7 @@ wxFileType *wxMimeTypesManagerImpl::GetFileTypeFromMimeType(const wxString& mime
 // If the requested extension is not know the OS is querried and the results saved
 wxFileType *wxMimeTypesManagerImpl::GetFileTypeFromUti(const wxString& uti)
 {
-    UtiMap::const_iterator utiItr = m_utiMap.find( uti );
+    const auto utiItr = m_utiMap.find( uti );
 
     if( utiItr == m_utiMap.end() )
     {
@@ -515,7 +514,7 @@ bool wxMimeTypesManagerImpl::Unassociate(wxFileType *WXUNUSED(ft))
 
 bool wxMimeTypesManagerImpl::GetExtensions(const wxString& uti, wxArrayString& extensions)
 {
-    const UtiMap::const_iterator itr = m_utiMap.find( uti );
+    const auto itr = m_utiMap.find( uti );
 
     if( itr == m_utiMap.end() || itr->second.extensions.GetCount() < 1 )
     {
@@ -529,7 +528,7 @@ bool wxMimeTypesManagerImpl::GetExtensions(const wxString& uti, wxArrayString& e
 
 bool wxMimeTypesManagerImpl::GetMimeType(const wxString& uti, wxString *mimeType)
 {
-    const UtiMap::const_iterator itr = m_utiMap.find( uti );
+    const auto itr = m_utiMap.find( uti );
 
     if( itr == m_utiMap.end() || itr->second.mimeTypes.GetCount() < 1 )
     {
@@ -543,7 +542,7 @@ bool wxMimeTypesManagerImpl::GetMimeType(const wxString& uti, wxString *mimeType
 
 bool wxMimeTypesManagerImpl::GetMimeTypes(const wxString& uti, wxArrayString& mimeTypes)
 {
-    const UtiMap::const_iterator itr = m_utiMap.find( uti );
+    const auto itr = m_utiMap.find( uti );
 
     if( itr == m_utiMap.end() || itr->second.mimeTypes.GetCount() < 1 )
     {
@@ -557,7 +556,7 @@ bool wxMimeTypesManagerImpl::GetMimeTypes(const wxString& uti, wxArrayString& mi
 
 bool wxMimeTypesManagerImpl::GetIcon(const wxString& uti, wxIconLocation *iconLoc)
 {
-    const UtiMap::const_iterator itr = m_utiMap.find( uti );
+    const auto itr = m_utiMap.find( uti );
 
     if( itr == m_utiMap.end() || !itr->second.iconLoc.IsOk() )
     {
@@ -571,7 +570,7 @@ bool wxMimeTypesManagerImpl::GetIcon(const wxString& uti, wxIconLocation *iconLo
 
 bool wxMimeTypesManagerImpl::GetDescription(const wxString& uti, wxString *desc)
 {
-    const UtiMap::const_iterator itr = m_utiMap.find( uti );
+    const auto itr = m_utiMap.find( uti );
 
     if( itr == m_utiMap.end() || itr->second.description.empty() )
     {
@@ -585,7 +584,7 @@ bool wxMimeTypesManagerImpl::GetDescription(const wxString& uti, wxString *desc)
 
 bool wxMimeTypesManagerImpl::GetApplication(const wxString& uti, wxString *command)
 {
-    const UtiMap::const_iterator itr = m_utiMap.find( uti );
+    const auto itr = m_utiMap.find( uti );
 
     if( itr == m_utiMap.end() )
     {

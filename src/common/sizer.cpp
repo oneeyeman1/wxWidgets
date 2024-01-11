@@ -32,8 +32,8 @@
 #include "wx/vector.h"
 #include "wx/listimpl.cpp"
 #include "wx/private/window.h"
-#include "wx/scopedptr.h"
 
+#include <memory>
 
 //---------------------------------------------------------------------------
 
@@ -832,7 +832,7 @@ wxSizerItem* wxSizer::DoInsert( size_t index, wxSizerItem *item )
         }
 
     private:
-        wxScopedPtr<wxSizerItem> m_item;
+        std::unique_ptr<wxSizerItem> m_item;
     };
 
     ContainingSizerGuard guard( item );
@@ -1527,7 +1527,7 @@ wxGridSizer::wxGridSizer( int rows, int cols, const wxSize& gap )
 wxSizerItem *wxGridSizer::DoInsert(size_t index, wxSizerItem *item)
 {
     // Ensure that the item will be deleted in case of exception.
-    wxScopedPtr<wxSizerItem> scopedItem( item );
+    std::unique_ptr<wxSizerItem> scopedItem( item );
 
     // if only the number of columns or the number of rows is specified for a
     // sizer, arbitrarily many items can be added to it but if both of them are
@@ -2753,7 +2753,7 @@ bool wxStaticBoxSizer::CheckIfNonBoxChild(wxWindow* win) const
                wxDumpWindow(win),
                wxDumpWindow(win->GetParent()));
 
-#ifdef __WXMSW__
+#if defined(__WXMSW__) && !defined(__WXUNIVERSAL__)
     // Additionally, under MSW the windows inside a static box are not
     // drawn at all when compositing is used, so we have to disable it.
     //
@@ -2762,7 +2762,7 @@ bool wxStaticBoxSizer::CheckIfNonBoxChild(wxWindow* win) const
     // this for compatibility in the first place, it seems better not
     // to risk it.
     win->MSWDisableComposited();
-#endif // __WXMSW__
+#endif // __WXMSW__ && !__WXUNIVERSAL__
 
     return true;
 }
@@ -2796,7 +2796,7 @@ void wxStaticBoxSizer::RepositionChildren(const wxSize& minSize)
     wxPoint old_pos( m_position );
 
     // If we didn't have any sibling children so far, but we don't have any
-    // real children neither, chances are that they could have been added, so
+    // real children either, chances are that they could have been added, so
     // check for this (but if we do have real children, don't bother doing
     // anything as this would result in extra overhead for every re-layout).
     if ( !m_hasNonBoxChildren && m_staticBox->GetChildren().empty() )

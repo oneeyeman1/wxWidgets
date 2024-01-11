@@ -44,12 +44,18 @@
 #include "wx/dynlib.h"
 #include "wx/module.h"
 
+#include "wx/msw/darkmode.h"
 #include "wx/msw/dc.h"
 #include "wx/msw/uxtheme.h"
 
+#include "wx/msw/private/custompaint.h"
 #include "wx/msw/private/darkmode.h"
 
+#include <memory>
+
+#if wxUSE_LOG_TRACE
 static const char* TRACE_DARKMODE = "msw-darkmode";
+#endif // wxUSE_LOG_TRACE
 
 #define DWMWA_USE_IMMERSIVE_DARK_MODE 20
 
@@ -168,8 +174,23 @@ public:
     virtual bool OnInit() override { return true; }
     virtual void OnExit() override
     {
+        ms_settings.reset();
+
         ms_pfnDwmSetWindowAttribute = (DwmSetWindowAttribute_t)-1;
         ms_dllDWM.Unload();
+    }
+
+    // Takes ownership of the provided pointer.
+    static void SetSettings(wxDarkModeSettings* settings)
+    {
+        ms_settings.reset(settings);
+    }
+
+    // Returns the currently used settings: may only be called when the dark
+    // mode is on.
+    static wxDarkModeSettings& GetSettings()
+    {
+        return *ms_settings;
     }
 
     static DwmSetWindowAttribute_t GetDwmSetWindowAttribute()
@@ -187,12 +208,15 @@ private:
     static wxDynamicLibrary ms_dllDWM;
     static DwmSetWindowAttribute_t ms_pfnDwmSetWindowAttribute;
 
+    static std::unique_ptr<wxDarkModeSettings> ms_settings;
+
     wxDECLARE_DYNAMIC_CLASS(wxDarkModeModule);
 };
 
 wxIMPLEMENT_DYNAMIC_CLASS(wxDarkModeModule, wxModule);
 
 wxDynamicLibrary wxDarkModeModule::ms_dllDWM;
+std::unique_ptr<wxDarkModeSettings> wxDarkModeModule::ms_settings;
 
 DwmSetWindowAttribute_t
 wxDarkModeModule::ms_pfnDwmSetWindowAttribute = (DwmSetWindowAttribute_t)-1;
@@ -201,7 +225,7 @@ wxDarkModeModule::ms_pfnDwmSetWindowAttribute = (DwmSetWindowAttribute_t)-1;
 // Public API
 // ----------------------------------------------------------------------------
 
-bool wxApp::MSWEnableDarkMode(int flags)
+bool wxApp::MSWEnableDarkMode(int flags, wxDarkModeSettings* settings)
 {
     if ( !wxMSWImpl::InitDarkMode() )
         return false;
@@ -220,61 +244,23 @@ bool wxApp::MSWEnableDarkMode(int flags)
 
     gs_appMode = mode;
 
+    // Set up the settings to use, allocating a default one if none specified.
+    if ( !settings )
+        settings = new wxDarkModeSettings();
+
+    wxDarkModeModule::SetSettings(settings);
+
     return true;
 }
 
 // ----------------------------------------------------------------------------
-// Supporting functions for the rest of wxMSW code
+// Default wxDarkModeSettings implementation
 // ----------------------------------------------------------------------------
 
-namespace wxMSWDarkMode
-{
+// Implemented here to ensure that it's generated inside the DLL.
+wxDarkModeSettings::~wxDarkModeSettings() = default;
 
-bool IsActive()
-{
-    return wxMSWImpl::ShouldUseDarkMode();
-}
-
-void EnableForTLW(HWND hwnd)
-{
-    // Nothing to do, dark mode support not enabled or dark mode is not used.
-    if ( !wxMSWImpl::ShouldUseDarkMode() )
-        return;
-
-    BOOL useDarkMode = TRUE;
-    HRESULT hr = wxDarkModeModule::GetDwmSetWindowAttribute()
-                 (
-                    hwnd,
-                    DWMWA_USE_IMMERSIVE_DARK_MODE,
-                    &useDarkMode,
-                    sizeof(useDarkMode)
-                 );
-    if ( FAILED(hr) )
-        wxLogApiError("DwmSetWindowAttribute(USE_IMMERSIVE_DARK_MODE)", hr);
-
-    wxMSWImpl::AllowDarkModeForWindow(hwnd, true);
-}
-
-void AllowForWindow(HWND hwnd, const wchar_t* themeName, const wchar_t* themeId)
-{
-    if ( !wxMSWImpl::ShouldUseDarkMode() )
-        return;
-
-    if ( wxMSWImpl::AllowDarkModeForWindow(hwnd, true) )
-        wxLogTrace(TRACE_DARKMODE, "Allow dark mode for %p failed", hwnd);
-
-    if ( themeName || themeId )
-    {
-        HRESULT hr = ::SetWindowTheme(hwnd, themeName, themeId);
-        if ( FAILED(hr) )
-        {
-            wxLogApiError(wxString::Format("SetWindowTheme(%p, %s, %s)",
-                                           hwnd, themeName, themeId), hr);
-        }
-    }
-}
-
-wxColour GetColour(wxSystemColour index)
+wxColour wxDarkModeSettings::GetColour(wxSystemColour index)
 {
     // This is not great at all, but better than using light mode colours that
     // are not appropriate for the dark mode.
@@ -347,6 +333,97 @@ wxColour GetColour(wxSystemColour index)
     return wxColour();
 }
 
+wxColour wxDarkModeSettings::GetMenuColour(wxMenuColour which)
+{
+    switch ( which )
+    {
+        case wxMenuColour::StandardFg:
+            return wxColour(0xffffff);
+
+        case wxMenuColour::StandardBg:
+            return GetColour(wxSYS_COLOUR_MENU);
+
+        case wxMenuColour::DisabledFg:
+            return wxColour(0x6d6d6d);
+
+        case wxMenuColour::HotBg:
+            return wxColour(0x414141);
+    }
+
+    wxFAIL_MSG( "unreachable" );
+    return wxColour();
+}
+
+wxPen wxDarkModeSettings::GetBorderPen()
+{
+    // Use a darker pen than the default white one by default. There doesn't
+    // seem to be any standard colour to use for it, Windows itself uses both
+    // 0x666666 and 0x797979 for the borders in the "Colours" control panel
+    // window, so it doesn't seem like anybody cares about consistency here.
+    return *wxGREY_PEN;
+}
+
+// ----------------------------------------------------------------------------
+// Supporting functions for the rest of wxMSW code
+// ----------------------------------------------------------------------------
+
+namespace wxMSWDarkMode
+{
+
+bool IsActive()
+{
+    return wxMSWImpl::ShouldUseDarkMode();
+}
+
+void EnableForTLW(HWND hwnd)
+{
+    // Nothing to do, dark mode support not enabled or dark mode is not used.
+    if ( !wxMSWImpl::ShouldUseDarkMode() )
+        return;
+
+    BOOL useDarkMode = TRUE;
+    HRESULT hr = wxDarkModeModule::GetDwmSetWindowAttribute()
+                 (
+                    hwnd,
+                    DWMWA_USE_IMMERSIVE_DARK_MODE,
+                    &useDarkMode,
+                    sizeof(useDarkMode)
+                 );
+    if ( FAILED(hr) )
+        wxLogApiError("DwmSetWindowAttribute(USE_IMMERSIVE_DARK_MODE)", hr);
+
+    wxMSWImpl::AllowDarkModeForWindow(hwnd, true);
+}
+
+void AllowForWindow(HWND hwnd, const wchar_t* themeName, const wchar_t* themeId)
+{
+    if ( !wxMSWImpl::ShouldUseDarkMode() )
+        return;
+
+    if ( wxMSWImpl::AllowDarkModeForWindow(hwnd, true) )
+        wxLogTrace(TRACE_DARKMODE, "Allow dark mode for %p failed", hwnd);
+
+    if ( themeName || themeId )
+    {
+        HRESULT hr = ::SetWindowTheme(hwnd, themeName, themeId);
+        if ( FAILED(hr) )
+        {
+            wxLogApiError(wxString::Format("SetWindowTheme(%p, %s, %s)",
+                                           hwnd, themeName, themeId), hr);
+        }
+    }
+}
+
+wxColour GetColour(wxSystemColour index)
+{
+    return wxDarkModeModule::GetSettings().GetColour(index);
+}
+
+wxPen GetBorderPen()
+{
+    return wxDarkModeModule::GetSettings().GetBorderPen();
+}
+
 HBRUSH GetBackgroundBrush()
 {
     wxBrush* const brush =
@@ -355,32 +432,35 @@ HBRUSH GetBackgroundBrush()
     return brush ? GetHbrushOf(*brush) : 0;
 }
 
+#if wxUSE_IMAGE
+
+static void
+InvertBitmapPixel(unsigned char& r, unsigned char& g, unsigned char& b,
+                  unsigned char& WXUNUSED(a))
+{
+    wxImage::RGBValue rgb(r, g, b);
+    wxImage::HSVValue hsv = wxImage::RGBtoHSV(rgb);
+
+    // There is no really good way to convert normal colours to dark mode,
+    // but try to do a bit better than just inverting the value because
+    // this results in colours which are much too dark.
+    hsv.value = sqrt(1.0 - hsv.value*hsv.value);
+
+    rgb = wxImage::HSVtoRGB(hsv);
+
+    r = rgb.red;
+    g = rgb.green;
+    b = rgb.blue;
+}
+
+#endif // wxUSE_IMAGE
+
 wxBitmap InvertBitmap(const wxBitmap& bmp)
 {
 #if wxUSE_IMAGE
-    wxImage image = bmp.ConvertToImage();
-
-    unsigned char *data = image.GetData();
-    const int len = image.GetWidth()*image.GetHeight();
-    for ( int i = 0; i < len; ++i, data += 3 )
-    {
-        wxImage::RGBValue rgb(data[0], data[1], data[2]);
-        wxImage::HSVValue hsv = wxImage::RGBtoHSV(rgb);
-
-        // There is no really good way to convert normal colours to dark mode,
-        // but try to do a bit better than just inverting the value because
-        // this results in colours which are much too dark.
-        hsv.value = sqrt(1.0 - hsv.value*hsv.value);
-
-        rgb = wxImage::HSVtoRGB(hsv);
-        data[0] = rgb.red;
-        data[1] = rgb.green;
-        data[2] = rgb.blue;
-    }
-
-    return wxBitmap(image);
+    return wxMSWImpl::PostPaintEachPixel(bmp, InvertBitmapPixel);
 #else // !wxUSE_IMAGE
-    return wxBitmap();
+    return bmp;
 #endif // wxUSE_IMAGE/!wxUSE_IMAGE
 }
 
@@ -390,29 +470,18 @@ bool PaintIfNecessary(HWND hwnd, WXWNDPROC defWndProc)
     if ( !wxMSWImpl::ShouldUseDarkMode() )
         return false;
 
-    const RECT rc = wxGetClientRect(hwnd);
-    const wxSize size{rc.right - rc.left, rc.bottom - rc.top};
-
-    // Don't bother doing anything with the empty windows.
-    if ( size == wxSize() )
-        return false;
-
-    // Ask the control to paint itself on the given bitmap.
-    wxBitmap bmp(size);
-    {
-        wxMemoryDC mdc(bmp);
-
-        WPARAM wparam = (WPARAM)GetHdcOf(mdc);
-        if ( defWndProc )
-            ::CallWindowProc(defWndProc, hwnd, WM_PAINT, wparam, 0);
-        else
-            ::DefWindowProc(hwnd, WM_PAINT, wparam, 0);
-    }
-
-    PAINTSTRUCT ps;
-    wxDCTemp dc(::BeginPaint(hwnd, &ps), size);
-    dc.DrawBitmap(InvertBitmap(bmp), 0, 0);
-    ::EndPaint(hwnd, &ps);
+    wxMSWImpl::CustomPaint
+    (
+        hwnd,
+        [defWndProc](HWND hwnd, WPARAM wParam)
+        {
+            if ( defWndProc )
+                ::CallWindowProc(defWndProc, hwnd, WM_PAINT, wParam, 0);
+            else
+                ::DefWindowProc(hwnd, WM_PAINT, wParam, 0);
+        },
+        InvertBitmap
+    );
 
     return true;
 #else // !wxUSE_IMAGE
@@ -457,14 +526,15 @@ struct MenuBarDrawMenuItem
     MenuBarMenuItem mbmi;
 };
 
-constexpr COLORREF COL_STANDARD = 0xffffff;
-constexpr COLORREF COL_DISABLED = 0x6d6d6d;
-constexpr COLORREF COL_MENU_HOT = 0x414141;
+wxColour GetMenuColour(wxMenuColour which)
+{
+    return wxDarkModeModule::GetSettings().GetMenuColour(which);
+}
 
-HBRUSH GetMenuBrush()
+HBRUSH GetMenuBrush(wxMenuColour which = wxMenuColour::StandardBg)
 {
     wxBrush* const brush =
-        wxTheBrushList->FindOrCreateBrush(GetColour(wxSYS_COLOUR_MENU));
+        wxTheBrushList->FindOrCreateBrush(GetMenuColour(which));
 
     return brush ? GetHbrushOf(*brush) : 0;
 }
@@ -568,9 +638,11 @@ HandleMenuMessage(WXLRESULT* result,
 
                 HBRUSH hbr = 0;
                 int partState = 0;
+                wxMenuColour colText = wxMenuColour::StandardFg;
                 if ( itemState & ODS_INACTIVE )
                 {
                     partState = MBI_DISABLED;
+                    colText = wxMenuColour::DisabledFg;
                 }
                 else if ( (itemState & ODS_GRAYED) && (itemState & ODS_HOTLIGHT) )
                 {
@@ -579,15 +651,13 @@ HandleMenuMessage(WXLRESULT* result,
                 else if ( itemState & ODS_GRAYED )
                 {
                     partState = MBI_DISABLED;
+                    colText = wxMenuColour::DisabledFg;
                 }
                 else if ( itemState & (ODS_HOTLIGHT | ODS_SELECTED) )
                 {
                     partState = MBI_HOT;
 
-                    auto* const
-                        brush = wxTheBrushList->FindOrCreateBrush(COL_MENU_HOT);
-                    if ( brush )
-                        hbr = GetHbrushOf(*brush);
+                    hbr = GetMenuBrush(wxMenuColour::HotBg);
                 }
                 else
                 {
@@ -607,15 +677,13 @@ HandleMenuMessage(WXLRESULT* result,
                 DTTOPTS textOpts;
                 textOpts.dwSize = sizeof(textOpts);
                 textOpts.dwFlags = DTT_TEXTCOLOR;
-                textOpts.crText = itemState & (ODS_INACTIVE | ODS_GRAYED)
-                                    ? COL_DISABLED
-                                    : COL_STANDARD;
+                textOpts.crText = wxColourToRGB(GetMenuColour(colText));
 
                 DWORD drawTextFlags = DT_CENTER | DT_SINGLELINE | DT_VCENTER;
                 if ( itemState & ODS_NOACCEL)
                     drawTextFlags |= DT_HIDEPREFIX;
 
-                wxUxThemeHandle menuTheme(GetHwndOf(w), L"Menu");
+                wxUxThemeHandle menuTheme(w, L"Menu");
                 ::DrawThemeTextEx(menuTheme, dis.hDC, MENU_BARITEM, partState,
                                   buf, mii.cch, drawTextFlags, rcItem,
                                   &textOpts);
@@ -630,7 +698,9 @@ HandleMenuMessage(WXLRESULT* result,
 
 #else // !wxUSE_DARK_MODE
 
-bool wxApp::MSWEnableDarkMode(int WXUNUSED(flags))
+bool
+wxApp::MSWEnableDarkMode(int WXUNUSED(flags),
+                         wxDarkModeSettings* WXUNUSED(settings))
 {
     return false;
 }
@@ -654,6 +724,11 @@ void AllowForWindow(HWND WXUNUSED(hwnd), const wchar_t* WXUNUSED(themeClass))
 wxColour GetColour(wxSystemColour WXUNUSED(index))
 {
     return wxColour();
+}
+
+wxPen GetBorderPen()
+{
+    return wxPen{};
 }
 
 HBRUSH GetBackgroundBrush()

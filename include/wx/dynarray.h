@@ -2,7 +2,6 @@
 // Name:        wx/dynarray.h
 // Purpose:     auto-resizable (i.e. dynamic) array support
 // Author:      Vadim Zeitlin
-// Modified by:
 // Created:     12.09.97
 // Copyright:   (c) 1998 Vadim Zeitlin <zeitlin@dptmaths.ens-cachan.fr>
 // Licence:     wxWindows licence
@@ -14,6 +13,8 @@
 #include "wx/defs.h"
 
 #include "wx/vector.h"
+
+#include <initializer_list>
 
 /*
   This header defines legacy dynamic arrays and object arrays (i.e. arrays
@@ -104,6 +105,12 @@ public:
     wxBaseArray(InputIterator first, InputIterator last)
         : base_vec(first, last)
     { }
+
+    template<typename U>
+    wxBaseArray(std::initializer_list<U> list) : base_vec(list.begin(), list.end()) {}
+
+    wxBaseArray(const std::vector<T>& vec) : base_vec(vec) { }
+    wxBaseArray(std::vector<T>&& vec) : base_vec(std::move(vec)) { }
 
     void Empty() { this->clear(); }
     void Clear() { this->clear(); }
@@ -263,12 +270,25 @@ private:
 // _WX_DECLARE_OBJARRAY: an array for pointers to type T with owning semantics
 // ----------------------------------------------------------------------------
 
+// Trivial default implementation of the traits used by wxBaseObjectArray.
+// It can only be used if the class T is complete.
+template <typename T>
+class wxDefaultBaseObjectArrayTraits
+{
+public:
+    static T* Clone(const T& value) { return new T{value}; }
+    static void Free(T* p) { delete p; }
+};
+
 // This class must be able to be declared with incomplete types, so it doesn't
 // actually use type T in its definition, and relies on a helper template
 // parameter, which is declared by WX_DECLARE_OBJARRAY() and defined by
 // WX_DEFINE_OBJARRAY(), for providing a way to create and destroy objects of
 // type T
-template <typename T, typename Traits>
+//
+// If the class T happens to be complete, Traits can be left unspecified and a
+// trivial implementation using copy ctor directly is used.
+template <typename T, typename Traits = wxDefaultBaseObjectArrayTraits<T>>
 class wxBaseObjectArray : private wxBaseArray<T*>
 {
     typedef wxBaseArray<T*> base;
@@ -515,6 +535,8 @@ private:
         name(size_t n, Base::const_reference v) : Base(n, v) { }              \
         template <class InputIterator>                                        \
         name(InputIterator first, InputIterator last) : Base(first, last) { } \
+        template<typename U>                                                  \
+        name(std::initializer_list<U> list) : Base(list.begin(), list.end()) { } \
     }
 
 

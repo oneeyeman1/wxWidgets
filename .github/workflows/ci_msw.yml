@@ -6,13 +6,13 @@ on:
     branches:
       - master
     paths-ignore:
+      - '.circleci/**'
       - '.github/ISSUE_TEMPLATE/**'
       - '.github/workflows/ci.yml'
       - '.github/workflows/ci_cmake.yml'
       - '.github/workflows/ci_mac.yml'
       - '.github/workflows/ci_msw_cross.yml'
       - '.github/workflows/docs_update.yml'
-      - 'build/cmake/**'
       - 'build/tools/appveyor*.bat'
       - 'distrib/**'
       - 'docs/**'
@@ -24,18 +24,17 @@ on:
       - 'src/osx/**'
       - '*.md'
       - '*.yml'
-      - 'CMakeLists.txt'
   pull_request:
     branches:
       - master
     paths-ignore:
+      - '.circleci/**'
       - '.github/ISSUE_TEMPLATE/**'
       - '.github/workflows/ci.yml'
       - '.github/workflows/ci_cmake.yml'
       - '.github/workflows/ci_mac.yml'
       - '.github/workflows/ci_msw_cross.yml'
       - '.github/workflows/docs_update.yml'
-      - 'build/cmake/**'
       - 'build/tools/appveyor*.bat'
       - 'distrib/**'
       - 'docs/**'
@@ -47,7 +46,6 @@ on:
       - 'src/osx/**'
       - '*.md'
       - '*.yml'
-      - 'CMakeLists.txt'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -67,13 +65,13 @@ jobs:
           - configuration: 'DLL Debug'
             platform: 'x64'
             vsversion: 2022
+            use_utf8: true
           - configuration: 'Debug'
             platform: 'Win32'
             vsversion: 2019
           - configuration: 'DLL Release'
             platform: 'x64'
             vsversion: 2019
-            use_stl: true
 
     steps:
       - name: Checkout
@@ -81,14 +79,16 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Configure to use STL
-        if: matrix.use_stl
+      - name: Configure build options
         working-directory: include/wx/msw
         run: |
-            $txt = Get-Content setup.h
-            Write-Output $txt |
-            %{$_ -replace "define wxUSE_STL 0", "define wxUSE_STL 1"} |
-            Set-Content setup.h
+            $use_utf8 = "${{ matrix.use_utf8 }}" ? 1 : 0
+            if ( $use_utf8 ) {
+              $txt = Get-Content setup.h
+              Write-Output $txt |
+              %{$_ -replace "define wxUSE_UNICODE_UTF8 0", "define wxUSE_UNICODE_UTF8 $use_utf8"} |
+              Set-Content setup.h
+            }
 
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.1.3

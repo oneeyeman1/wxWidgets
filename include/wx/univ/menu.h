@@ -2,7 +2,6 @@
 // Name:        wx/univ/menu.h
 // Purpose:     wxMenu and wxMenuBar classes for wxUniversal
 // Author:      Vadim Zeitlin
-// Modified by:
 // Created:     05.05.01
 // Copyright:   (c) 2001 SciTech Software, Inc. (www.scitechsoft.com)
 // Licence:     wxWindows licence
@@ -19,8 +18,6 @@
 
 // fwd declarations
 class WXDLLIMPEXP_FWD_CORE wxMenuInfo;
-WX_DECLARE_EXPORTED_OBJARRAY(wxMenuInfo, wxMenuInfoArray);
-
 class WXDLLIMPEXP_FWD_CORE wxMenuGeometryInfo;
 class WXDLLIMPEXP_FWD_CORE wxPopupMenuWindow;
 class WXDLLIMPEXP_FWD_CORE wxRenderer;
@@ -141,7 +138,7 @@ class WXDLLIMPEXP_CORE wxMenuBar : public wxMenuBarBase
 {
 public:
     // ctors and dtor
-    wxMenuBar(long WXUNUSED(style) = 0) { Init(); }
+    wxMenuBar(long WXUNUSED(style) = 0);
     wxMenuBar(size_t n, wxMenu *menus[], const wxString titles[], long style = 0);
     virtual ~wxMenuBar();
 
@@ -213,7 +210,7 @@ protected:
     bool IsCreated() const { return m_frameLast != nullptr; }
 
     // "fast" version of GetMenuCount()
-    size_t GetCount() const { return m_menuInfos.GetCount(); }
+    size_t GetCount() const;
 
     // get the (total) width of the specified menu
     wxCoord GetItemWidth(size_t pos) const;
@@ -249,7 +246,7 @@ protected:
     bool ReleaseMouseCapture();
 
     // the array containing extra menu info we need
-    wxMenuInfoArray m_menuInfos;
+    std::vector<wxMenuInfo> m_menuInfos;
 
     // the current item (only used when menubar has focus)
     int m_current;

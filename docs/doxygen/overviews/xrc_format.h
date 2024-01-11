@@ -222,7 +222,7 @@ is "." regardless of the locale.
 
 @subsection overview_xrcformat_type_colour Colour
 
-Colour specification can be either any string colour representation accepted
+A single colour can be either any string colour representation accepted
 by wxColour::Set() or any wxSYS_COLOUR_XXX symbolic name accepted by
 wxSystemSettings::GetColour(). In particular, the following forms are supported:
 
@@ -231,11 +231,21 @@ wxSystemSettings::GetColour(). In particular, the following forms are supported:
 @li CSS-style "rgb(r,g,b)" and "rgba(r,g,b,a)"
 @li wxSYS_COLOUR_XXX symbolic names
 
+Moreover, a single colour definition in XRC may contain more than one colour,
+separated by `|` (pipe symbol), with the first colour used by default and the
+subsequent colours in specific situations. Currently the only supported
+alternative colour is the colour to be used in dark mode, which must be
+prefixed with "dark:".
+
+It is recommended to provide both light and dark values when not using system
+colour names (that already adapt to the dark mode), as it's rare for the same
+colour to look well in both light and dark mode.
+
 Some examples:
 @code
 <fg>red</fg>
 <fg>#ff0000</fg>
-<fg>rgb(255,0,0)</fg>
+<fg>rgb(192,192,192)|dark:#404040</fg>
 <fg>wxSYS_COLOUR_HIGHLIGHT</fg>
 @endcode
 
@@ -643,7 +653,9 @@ controls cannot have children.
 @beginTable
 @hdr3col{property, type, description}
 @row3col{animation, @ref overview_xrcformat_type_url,
-    Animation file to load into the control (default: none).}
+    Animation file to load into the control or, since wxWindow 3.3.0, multiple
+    semicolon-separated files in order of increasing size, corresponding to
+    multiple versions of the animation for different resolutions (default: none).}
 @row3col{inactive-bitmap, @ref overview_xrcformat_type_bitmap,
     Bitmap to use when not playing the animation (default: the default).}
 @endTable

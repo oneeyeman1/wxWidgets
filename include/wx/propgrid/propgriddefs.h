@@ -2,7 +2,6 @@
 // Name:        wx/propgrid/propgriddefs.h
 // Purpose:     wxPropertyGrid miscellaneous definitions
 // Author:      Jaakko Salli
-// Modified by:
 // Created:     2008-08-31
 // Copyright:   (c) Jaakko Salli
 // Licence:     wxWindows licence
@@ -16,167 +15,15 @@
 #if wxUSE_PROPGRID
 
 #include "wx/colour.h"
-#include "wx/hashset.h"
 
 class WXDLLIMPEXP_FWD_CORE wxPoint;
 class WXDLLIMPEXP_FWD_CORE wxSize;
 class WXDLLIMPEXP_FWD_CORE wxFont;
 
 #include <limits>
-#if wxUSE_STD_CONTAINERS
-#include <numeric>
-#endif // wxUSE_STD_CONTAINERS
+#include <unordered_map>
 
 // -----------------------------------------------------------------------
-
-//
-// Here are some platform dependent defines
-// NOTE: More in propertygrid.cpp
-//
-// NB: Only define wxPG_TEXTCTRLXADJUST for platforms that do not
-//     (yet) support wxTextEntry::SetMargins() for the left margin.
-
-#if defined(__WXMSW__)
-
-    // space between vertical line and value text
-    #define wxPG_XBEFORETEXT            4
-    // space between vertical line and value editor control
-    #define wxPG_XBEFOREWIDGET          1
-
-    // left margin can be set with wxTextEntry::SetMargins()
-    #undef wxPG_TEXTCTRLXADJUST
-
-    // comment to use bitmap buttons
-    #define wxPG_ICON_WIDTH             9
-    // 1 if wxRendererNative should be employed
-    #define wxPG_USE_RENDERER_NATIVE    1
-
-    // width of optional bitmap/image in front of property
-    #define wxPG_CUSTOM_IMAGE_WIDTH     20
-
-    // 1 if splitter drag detect margin and control cannot overlap
-    #define wxPG_NO_CHILD_EVT_MOTION    0
-
-    #define wxPG_NAT_BUTTON_BORDER_ANY          1
-    #define wxPG_NAT_BUTTON_BORDER_X            1
-    #define wxPG_NAT_BUTTON_BORDER_Y            1
-
-    // If 1 then controls are refreshed explicitly in a few places
-    #define wxPG_REFRESH_CONTROLS 0
-
-#elif defined(__WXGTK__)
-
-    // space between vertical line and value text
-    #define wxPG_XBEFORETEXT            5
-    // space between vertical line and value editor control
-    #define wxPG_XBEFOREWIDGET          1
-
-    // x position adjustment for wxTextCtrl (and like)
-    // left margin can be set with wxTextEntry::SetMargins()
-    #undef wxPG_TEXTCTRLXADJUST
-
-    // comment to use bitmap buttons
-    #define wxPG_ICON_WIDTH             9
-    // 1 if wxRendererNative should be employed
-    #define wxPG_USE_RENDERER_NATIVE    1
-
-    // width of optional bitmap/image in front of property
-    #define wxPG_CUSTOM_IMAGE_WIDTH     20
-
-    // 1 if splitter drag detect margin and control cannot overlap
-    #define wxPG_NO_CHILD_EVT_MOTION    1
-
-    #define wxPG_NAT_BUTTON_BORDER_ANY      1
-    #define wxPG_NAT_BUTTON_BORDER_X        1
-    #define wxPG_NAT_BUTTON_BORDER_Y        1
-
-    // If 1 then controls are refreshed after selected was drawn.
-    #define wxPG_REFRESH_CONTROLS 1
-
-#elif defined(__WXMAC__)
-
-    // space between vertical line and value text
-    #define wxPG_XBEFORETEXT            4
-    // space between vertical line and value editor widget
-    #define wxPG_XBEFOREWIDGET          1
-
-    // x position adjustment for wxTextCtrl (and like)
-    // left margin cannot be set with wxTextEntry::SetMargins()
-    #define wxPG_TEXTCTRLXADJUST        1
-
-    // comment to use bitmap buttons
-    #define wxPG_ICON_WIDTH             11
-    // 1 if wxRendererNative should be employed
-    #define wxPG_USE_RENDERER_NATIVE    1
-
-    // width of optional bitmap/image in front of property
-    #define wxPG_CUSTOM_IMAGE_WIDTH     20
-
-    // 1 if splitter drag detect margin and control cannot overlap
-    #define wxPG_NO_CHILD_EVT_MOTION    0
-
-    #define wxPG_NAT_BUTTON_BORDER_ANY      0
-    #define wxPG_NAT_BUTTON_BORDER_X        0
-    #define wxPG_NAT_BUTTON_BORDER_Y        0
-
-    // If 1 then controls are refreshed after selected was drawn.
-    #define wxPG_REFRESH_CONTROLS 0
-
-#else // defaults
-
-    // space between vertical line and value text
-    #define wxPG_XBEFORETEXT            5
-    // space between vertical line and value editor widget
-    #define wxPG_XBEFOREWIDGET          1
-
-    // x position adjustment for wxTextCtrl (and like)
-    // left margin cannot be set with wxTextEntry::SetMargins()
-    #define wxPG_TEXTCTRLXADJUST        3
-
-    // comment to use bitmap buttons
-    #define wxPG_ICON_WIDTH             9
-    // 1 if wxRendererNative should be employed
-    #define wxPG_USE_RENDERER_NATIVE    0
-
-    // width of optional bitmap/image in front of property
-    #define wxPG_CUSTOM_IMAGE_WIDTH     20
-
-    // 1 if splitter drag detect margin and control cannot overlap
-    #define wxPG_NO_CHILD_EVT_MOTION    1
-
-    #define wxPG_NAT_BUTTON_BORDER_ANY      0
-    #define wxPG_NAT_BUTTON_BORDER_X        0
-    #define wxPG_NAT_BUTTON_BORDER_Y        0
-
-    // If 1 then controls are refreshed after selected was drawn.
-    #define wxPG_REFRESH_CONTROLS 0
-#endif // platform
-
-
-#define wxPG_CONTROL_MARGIN             0 // space between splitter and control
-
-#define wxCC_CUSTOM_IMAGE_MARGIN1       4  // before image
-#define wxCC_CUSTOM_IMAGE_MARGIN2       5  // after image
-
-#define DEFAULT_IMAGE_OFFSET_INCREMENT \
-    (wxCC_CUSTOM_IMAGE_MARGIN1 + wxCC_CUSTOM_IMAGE_MARGIN2)
-
-#define wxPG_DRAG_MARGIN                30
-
-#if wxPG_NO_CHILD_EVT_MOTION
-    #define wxPG_SPLITTERX_DETECTMARGIN1    3 // this much on left
-    #define wxPG_SPLITTERX_DETECTMARGIN2    2 // this much on right
-#else
-    #define wxPG_SPLITTERX_DETECTMARGIN1    3 // this much on left
-    #define wxPG_SPLITTERX_DETECTMARGIN2    2 // this much on right
-#endif
-
-// Use this macro to generate standard custom image height from
-#define wxPG_STD_CUST_IMAGE_HEIGHT(LINEHEIGHT)  ((LINEHEIGHT)-3)
-
-// Undefine wxPG_ICON_WIDTH to use supplied xpm bitmaps instead
-// (for tree buttons)
-//#undef wxPG_ICON_WIDTH
 
 // Set 1 to include advanced properties (wxFontProperty, wxColourProperty, etc.)
 #ifndef wxPG_INCLUDE_ADVPROPS
@@ -277,9 +124,7 @@ WX_DEFINE_TYPEARRAY_WITH_DECL_PTR(wxPGProperty*, wxArrayPGProperty,
                                   wxBaseArrayPtrVoid,
                                   class WXDLLIMPEXP_PROPGRID);
 
-WX_DECLARE_STRING_HASH_MAP_WITH_DECL(wxString,
-                                     wxPGHashMapS2S,
-                                     class WXDLLIMPEXP_PROPGRID);
+using wxPGHashMapS2S = std::unordered_map<wxString, wxString>;
 
 #if WXWIN_COMPATIBILITY_3_0
 WX_DEFINE_TYPEARRAY_WITH_DECL_PTR(wxObject*, wxArrayPGObject,
@@ -351,39 +196,108 @@ wxDEPRECATED_MSG("use wxPGPropertyValuesFlags::Force instead")
 constexpr wxPGPropertyValuesFlags wxPG_FORCE { wxPGPropertyValuesFlags::Force };
 wxDEPRECATED_MSG("use wxPGPropertyValuesFlags::SortTopLevelOnly instead")
 constexpr wxPGPropertyValuesFlags wxPG_SORT_TOP_LEVEL_ONLY { wxPGPropertyValuesFlags::SortTopLevelOnly };
+
+wxDEPRECATED_MSG("use wxPGPropertyValuesFlags instead")
+constexpr bool operator==(wxPGPropertyValuesFlags a, int b)
+{
+    return static_cast<int>(a) == b;
+}
+
+wxDEPRECATED_MSG("use wxPGPropertyValuesFlags instead")
+constexpr bool operator!=(wxPGPropertyValuesFlags a, int b)
+{
+    return static_cast<int>(a) != b;
+}
 #endif // WXWIN_COMPATIBILITY_3_2
 
 // -----------------------------------------------------------------------
 
-// Misc. argument flags.
-enum wxPG_MISC_ARG_FLAGS
+// Miscellaneous property value format flags
+enum class wxPGPropValFormatFlags : int
 {
+    // No flags.
+    Null = 0,
+
     // Get/Store full value instead of displayed value.
-    wxPG_FULL_VALUE                     = 0x00000001,
+    FullValue                   = 0x00000001,
 
     // Perform special action in case of unsuccessful conversion.
-    wxPG_REPORT_ERROR                   = 0x00000002,
+    ReportError                 = 0x00000002,
 
-    wxPG_PROPERTY_SPECIFIC              = 0x00000004,
+    PropertySpecific            = 0x00000004,
 
     // Get/Store editable value instead of displayed one (should only be
     // different in the case of common values)
-    wxPG_EDITABLE_VALUE                 = 0x00000008,
+    EditableValue               = 0x00000008,
 
     // Used when dealing with fragments of composite string value
-    wxPG_COMPOSITE_FRAGMENT             = 0x00000010,
+    CompositeFragment           = 0x00000010,
 
     // Means property for which final string value is for cannot really be
     // edited.
-    wxPG_UNEDITABLE_COMPOSITE_FRAGMENT  = 0x00000020,
+    UneditableCompositeFragment = 0x00000020,
 
     // ValueToString() called from GetValueAsString()
     // (guarantees that input wxVariant value is current own value)
-    wxPG_VALUE_IS_CURRENT               = 0x00000040,
+    ValueIsCurrent              = 0x00000040,
 
     // Value is being set programmatically (i.e. not by user)
-    wxPG_PROGRAMMATIC_VALUE             = 0x00000080
+    ProgrammaticValue           = 0x00000080
 };
+
+constexpr wxPGPropValFormatFlags operator&(wxPGPropValFormatFlags a, wxPGPropValFormatFlags b)
+{
+    return static_cast<wxPGPropValFormatFlags>(static_cast<int>(a) & static_cast<int>(b));
+}
+
+constexpr wxPGPropValFormatFlags operator|(wxPGPropValFormatFlags a, wxPGPropValFormatFlags b)
+{
+    return static_cast<wxPGPropValFormatFlags>(static_cast<int>(a) | static_cast<int>(b));
+}
+
+inline wxPGPropValFormatFlags operator|=(wxPGPropValFormatFlags& a, wxPGPropValFormatFlags b)
+{
+    return a = a | b;
+}
+
+constexpr bool operator!(wxPGPropValFormatFlags a)
+{
+    return static_cast<int>(a) == 0;
+}
+
+#if WXWIN_COMPATIBILITY_3_2
+constexpr int operator&(int a, wxPGPropValFormatFlags b)
+{
+    return a & static_cast<int>(b);
+}
+
+constexpr int operator|(int a, wxPGPropValFormatFlags b)
+{
+    return a | static_cast<int>(b);
+}
+
+inline int operator|=(int& a, wxPGPropValFormatFlags b)
+{
+    return a = a | static_cast<int>(b);
+}
+
+wxDEPRECATED_MSG("use wxPGPropValFormatFlags::FullValue instead")
+constexpr wxPGPropValFormatFlags wxPG_FULL_VALUE { wxPGPropValFormatFlags::FullValue };
+wxDEPRECATED_MSG("use wxPGPropValFormatFlags::ReportError instead")
+constexpr wxPGPropValFormatFlags wxPG_REPORT_ERROR { wxPGPropValFormatFlags::ReportError };
+wxDEPRECATED_MSG("use wxPGPropValFormatFlags::PropertySpecific instead")
+constexpr wxPGPropValFormatFlags wxPG_PROPERTY_SPECIFIC { wxPGPropValFormatFlags::PropertySpecific };
+wxDEPRECATED_MSG("use wxPGPropValFormatFlags::EditableValue instead")
+constexpr wxPGPropValFormatFlags wxPG_EDITABLE_VALUE { wxPGPropValFormatFlags::EditableValue };
+wxDEPRECATED_MSG("use wxPGPropValFormatFlags::CompositeFragment instead")
+constexpr wxPGPropValFormatFlags wxPG_COMPOSITE_FRAGMENT { wxPGPropValFormatFlags::CompositeFragment };
+wxDEPRECATED_MSG("use wxPGPropValFormatFlags::UneditableCompositeFragment instead")
+constexpr wxPGPropValFormatFlags wxPG_UNEDITABLE_COMPOSITE_FRAGMENT { wxPGPropValFormatFlags::UneditableCompositeFragment };
+wxDEPRECATED_MSG("use wxPGPropValFormatFlags::ValueIsCurrent instead")
+constexpr wxPGPropValFormatFlags wxPG_VALUE_IS_CURRENT { wxPGPropValFormatFlags::ValueIsCurrent };
+wxDEPRECATED_MSG("use wxPGPropValFormatFlags::ProgrammaticValue instead")
+constexpr wxPGPropValFormatFlags wxPG_PROGRAMMATIC_VALUE { wxPGPropValFormatFlags::ProgrammaticValue };
+#endif // WXWIN_COMPATIBILITY_3_2
 
 // -----------------------------------------------------------------------
 
@@ -425,6 +339,18 @@ wxDEPRECATED_MSG("use wxPGSetValueFlags::FromParent instead")
 constexpr wxPGSetValueFlags wxPG_SETVAL_FROM_PARENT { wxPGSetValueFlags::FromParent };
 wxDEPRECATED_MSG("use wxPGSetValueFlags::ByUser instead")
 constexpr wxPGSetValueFlags wxPG_SETVAL_BY_USER { wxPGSetValueFlags::ByUser };
+
+wxDEPRECATED_MSG("use wxPGSetValueFlags instead")
+constexpr bool operator==(wxPGSetValueFlags a, int b)
+{
+    return static_cast<int>(a) == b;
+}
+
+wxDEPRECATED_MSG("use wxPGSetValueFlags instead")
+constexpr bool operator!=(wxPGSetValueFlags a, int b)
+{
+    return static_cast<int>(a) != b;
+}
 #endif // WXWIN_COMPATIBILITY_3_2
 
 // -----------------------------------------------------------------------
@@ -548,7 +474,7 @@ const char* classname##_VariantType = #classname; \
 class classname##VariantData: public wxVariantData \
 { \
 public:\
-    classname##VariantData() {} \
+    classname##VariantData() = default; \
     classname##VariantData( const classname &value ) : m_value(value) { } \
 \
     classname &GetValue() { return m_value; } \

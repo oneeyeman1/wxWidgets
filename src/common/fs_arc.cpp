@@ -8,6 +8,8 @@
 
 #include "wx/wxprec.h"
 
+#include <memory>
+
 #if wxUSE_FS_ARCHIVE
 
 #include "wx/fs_arc.h"
@@ -32,7 +34,8 @@
 // version.
 //---------------------------------------------------------------------------
 
-WX_DECLARE_STRING_HASH_MAP(wxArchiveEntry*, wxArchiveFSEntryHash);
+using wxArchiveFSEntryHash =
+    std::unordered_map<wxString, std::unique_ptr<wxArchiveEntry>>;
 
 struct wxArchiveFSEntry
 {
@@ -59,6 +62,7 @@ public:
     wxArchiveFSEntry *GetNext(wxArchiveFSEntry *fse);
 
 private:
+    // Takes ownership of "entry".
     wxArchiveFSEntry *AddToCache(wxArchiveEntry *entry);
     void CloseStreams();
 
@@ -98,8 +102,6 @@ wxArchiveFSCacheDataImpl::wxArchiveFSCacheDataImpl(
 
 wxArchiveFSCacheDataImpl::~wxArchiveFSCacheDataImpl()
 {
-    WX_CLEAR_HASH_MAP(wxArchiveFSEntryHash, m_hash);
-
     wxArchiveFSEntry *entry = m_begin;
 
     while (entry)
@@ -114,7 +116,7 @@ wxArchiveFSCacheDataImpl::~wxArchiveFSCacheDataImpl()
 
 wxArchiveFSEntry *wxArchiveFSCacheDataImpl::AddToCache(wxArchiveEntry *entry)
 {
-    m_hash[entry->GetName(wxPATH_UNIX)] = entry;
+    m_hash[entry->GetName(wxPATH_UNIX)] = std::unique_ptr<wxArchiveEntry>(entry);
     wxArchiveFSEntry *fse = new wxArchiveFSEntry;
     *m_endptr = fse;
     (*m_endptr)->entry = entry;
@@ -131,10 +133,10 @@ void wxArchiveFSCacheDataImpl::CloseStreams()
 
 wxArchiveEntry *wxArchiveFSCacheDataImpl::Get(const wxString& name)
 {
-    wxArchiveFSEntryHash::iterator it = m_hash.find(name);
+    const auto it = m_hash.find(name);
 
     if (it != m_hash.end())
-        return it->second;
+        return it->second.get();
 
     if (!m_archive)
         return nullptr;
@@ -254,7 +256,8 @@ wxArchiveFSCacheData& wxArchiveFSCacheData::operator=(
 // of wxFileSystem.
 //---------------------------------------------------------------------------
 
-WX_DECLARE_STRING_HASH_MAP(wxArchiveFSCacheData, wxArchiveFSCacheDataHash);
+using wxArchiveFSCacheDataHash =
+    std::unordered_map<wxString, wxArchiveFSCacheData>;
 
 class wxArchiveFSCache
 {
@@ -289,9 +292,9 @@ wxArchiveFSCacheData* wxArchiveFSCache::Add(
 
 wxArchiveFSCacheData *wxArchiveFSCache::Get(const wxString& name)
 {
-    wxArchiveFSCacheDataHash::iterator it;
+    const auto it = m_hash.find(name);
 
-    if ((it = m_hash.find(name)) != m_hash.end())
+    if (it != m_hash.end())
         return &it->second;
 
     return nullptr;
@@ -435,9 +438,9 @@ wxString wxArchiveFSHandler::FindFirst(const wxString& spec, int flags)
     switch (flags)
     {
         case wxFILE:
-            m_AllowDirs = false, m_AllowFiles = true; break;
+            m_AllowDirs = false; m_AllowFiles = true; break;
         case wxDIR:
-            m_AllowDirs = true, m_AllowFiles = false; break;
+            m_AllowDirs = true; m_AllowFiles = false; break;
         default:
             m_AllowDirs = m_AllowFiles = true; break;
     }

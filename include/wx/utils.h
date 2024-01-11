@@ -2,7 +2,6 @@
 // Name:        wx/utils.h
 // Purpose:     Miscellaneous utilities
 // Author:      Julian Smart
-// Modified by:
 // Created:     29/01/98
 // Copyright:   (c) 1998 Julian Smart
 // Licence:     wxWindows licence
@@ -18,7 +17,6 @@
 #include "wx/object.h"
 #include "wx/list.h"
 #include "wx/filefn.h"
-#include "wx/hashmap.h"
 #include "wx/versioninfo.h"
 #include "wx/meta/implicitconversion.h"
 
@@ -38,12 +36,21 @@ class WXDLLIMPEXP_FWD_BASE wxArrayInt;
 // needed for wxOperatingSystemId, wxLinuxDistributionInfo
 #include "wx/platinfo.h"
 
+// This is a hack, but this header used to include wx/hashmap.h which, in turn,
+// included wx/wxcrt.h and it turns out quite some existing code relied on it
+// by using the CRT wrapper functions declared there without explicitly
+// including that header, so keep including it from here to let it continue to
+// compile.
+#include "wx/wxcrt.h"
+
 #if defined(__X__)
     #include <dirent.h>
     #include <unistd.h>
 #endif
 
 #include <stdio.h>
+
+#include <unordered_map>
 
 // ----------------------------------------------------------------------------
 // Forward declaration
@@ -366,7 +373,7 @@ enum
 };
 
 // Map storing environment variables.
-typedef wxStringToStringHashMap wxEnvVariableHashMap;
+using wxEnvVariableHashMap = std::unordered_map<wxString, wxString>;
 
 // Used to pass additional parameters for child process to wxExecute(). Could
 // be extended with other fields later.
@@ -756,19 +763,24 @@ void WXDLLIMPEXP_CORE wxGetMousePosition( int* x, int* y );
         wxDisplayType type;
     };
     WXDLLIMPEXP_CORE wxDisplayInfo wxGetDisplayInfo();
+
+    inline struct _XDisplay *wxGetX11Display()
+    {
+        const auto& info = wxGetDisplayInfo();
+        return info.type == wxDisplayX11 ? (_XDisplay*)info.dpy : nullptr;
+    }
 #endif
 
 #ifdef __X__
     WXDLLIMPEXP_CORE WXDisplay *wxGetDisplay();
     WXDLLIMPEXP_CORE bool wxSetDisplay(const wxString& display_name);
     WXDLLIMPEXP_CORE wxString wxGetDisplayName();
-#endif // X or GTK+
 
-// use this function instead of the functions above in implementation code
-inline struct _XDisplay *wxGetX11Display()
-{
-    return (_XDisplay *)wxGetDisplay();
-}
+    inline struct _XDisplay *wxGetX11Display()
+    {
+        return (_XDisplay *)wxGetDisplay();
+    }
+#endif // X
 
 #endif // X11 || wxGTK
 

@@ -2,7 +2,6 @@
 // Name:        src/msw/stdpaths.cpp
 // Purpose:     wxStandardPaths implementation for Win32
 // Author:      Vadim Zeitlin
-// Modified by:
 // Created:     2004-10-19
 // Copyright:   (c) 2004 Vadim Zeitlin <vadim@wxwidgets.org>
 // Licence:     wxWindows licence
@@ -189,6 +188,9 @@ wxString wxStandardPaths::GetUserDir(Dir userDir) const
     {
         case Dir_Cache:
             csidl = CSIDL_LOCAL_APPDATA;
+            break;
+        case Dir_Config:
+            csidl = CSIDL_APPDATA;
             break;
         case Dir_Desktop:
             csidl = CSIDL_DESKTOPDIRECTORY;

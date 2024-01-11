@@ -41,8 +41,6 @@
 #include "wx/dcbuffer.h"
 #include "wx/icon.h"
 #include "wx/itemattr.h"
-#include "wx/list.h"
-#include "wx/listimpl.cpp"
 #include "wx/imaglist.h"
 #include "wx/headerctrl.h"
 #include "wx/dnd.h"
@@ -1712,18 +1710,19 @@ public:
             m_dist_x -= indent;
             m_hint = new wxFrame( m_win->GetParent(), wxID_ANY, wxEmptyString,
                                         wxPoint(pos.x - m_dist_x, pos.y + 5 ),
-                                        ib.GetSize(),
+                                        wxSize(1, 1),
                                         wxFRAME_TOOL_WINDOW |
                                         wxFRAME_FLOAT_ON_PARENT |
                                         wxFRAME_NO_TASKBAR |
                                         wxNO_BORDER );
             new wxBitmapCanvas( m_hint, ib, ib.GetSize() );
+            m_hint->SetClientSize(ib.GetSize());
+            m_hint->SetTransparent(128);
             m_hint->Show();
         }
         else
         {
             m_hint->Move( pos.x - m_dist_x, pos.y + 5  );
-            m_hint->SetTransparent( 128 );
         }
 
         return false;
@@ -2605,8 +2604,9 @@ void wxDataViewMainWindow::OnPaint( wxPaintEvent &WXUNUSED(event) )
             const wxColour bgColour = m_owner->GetBackgroundColour();
 
             // Depending on the background, alternate row color
-            // will be 3% more dark or 50% brighter.
-            int alpha = bgColour.GetRGB() > 0x808080 ? 97 : 150;
+            // will be 3% more dark or 10% brighter -- because 3% brighter
+            // would be unnoticeable.
+            int alpha = bgColour.GetRGB() > 0x808080 ? 97 : 110;
             altRowColour = bgColour.ChangeLightness(alpha);
         }
 
@@ -2836,7 +2836,6 @@ void wxDataViewMainWindow::OnPaint( wxPaintEvent &WXUNUSED(event) )
             wxDataViewTreeNode *node = nullptr;
             wxDataViewItem dataitem;
             const int line_height = GetLineHeight(item);
-            bool hasValue = true;
 
             if (!IsVirtualList())
             {
@@ -2848,10 +2847,6 @@ void wxDataViewMainWindow::OnPaint( wxPaintEvent &WXUNUSED(event) )
                 }
 
                 dataitem = node->GetItem();
-
-                if ( !model->HasValue(dataitem, col->GetModelColumn()) )
-                    hasValue = false;
-
             }
             else
             {
@@ -2868,8 +2863,7 @@ void wxDataViewMainWindow::OnPaint( wxPaintEvent &WXUNUSED(event) )
                 state |= wxDATAVIEW_CELL_SELECTED;
 
             cell->SetState(state);
-            if (hasValue)
-                hasValue = cell->PrepareForItem(model, dataitem, col->GetModelColumn());
+            const bool hasValue = cell->PrepareForItem(model, dataitem, col->GetModelColumn());
 
             // draw the background
             if ( !selected )
@@ -5647,7 +5641,7 @@ bool wxDataViewCtrl::Create(wxWindow *parent,
     SetInitialSize(size);
 
 #ifdef __WXMAC__
-    MacSetClipChildren( true );
+    MacSetClipChildren();
 #endif
 
     m_clientArea = new wxDataViewMainWindow( this, wxID_ANY );

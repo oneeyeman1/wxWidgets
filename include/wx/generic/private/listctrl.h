@@ -282,7 +282,8 @@ public:
                            const wxRect& rect,
                            const wxRect& rectHL,
                            bool highlighted,
-                           bool current );
+                           bool current,
+                           bool checked );
 
 private:
     // set the line to contain num items (only can be > 1 in report mode)
@@ -845,14 +846,15 @@ protected:
     // get the line data for the given index
     wxListLineData *GetLine(size_t n) const
     {
-        wxASSERT_MSG( n != (size_t)-1, wxT("invalid line index") );
-
         wxListMainWindow *self = wxConstCast(this, wxListMainWindow);
-
         if ( IsVirtual() )
         {
             self->CacheLineData(n);
             n = 0;
+        }
+        else
+        {
+            wxCHECK_MSG( n < m_lines.size(), nullptr, wxT("invalid line index") );
         }
 
         return &self->m_lines[n];

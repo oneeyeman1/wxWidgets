@@ -33,10 +33,6 @@
     #include <stat.h>
 #endif
 
-#if wxUSE_STD_IOSTREAM
-    #include <fstream>
-#endif
-
 #include "wx/filefn.h"
 #include "wx/sysopt.h"
 #include "wx/thread.h"
@@ -1265,6 +1261,9 @@ void wxNSTextViewControl::SetStyle(long start,
                 break;
             case wxTEXT_ALIGNMENT_CENTER:
                 [m_textView setAlignment:NSCenterTextAlignment];
+                break;
+            case wxTEXT_ALIGNMENT_JUSTIFIED:
+                [m_textView setAlignment:NSJustifiedTextAlignment];
                 break;
             default:
                 [m_textView setAlignment:NSLeftTextAlignment];

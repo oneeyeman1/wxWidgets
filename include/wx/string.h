@@ -2,7 +2,6 @@
 // Name:        wx/string.h
 // Purpose:     wxString class
 // Author:      Vadim Zeitlin
-// Modified by:
 // Created:     29/01/98
 // Copyright:   (c) 1998 Vadim Zeitlin <zeitlin@dptmaths.ens-cachan.fr>
 // Licence:     wxWindows licence
@@ -44,6 +43,15 @@
 #include "wx/beforestd.h"
 #include <string>
 #include <utility>
+
+// Check if C++17 <string_view> is available
+#if wxHAS_CXX17_INCLUDE(<string_view>)
+    #include <string_view>
+    #ifdef __cpp_lib_string_view
+        #define wxHAS_STD_STRING_VIEW
+    #endif
+#endif
+
 #include "wx/afterstd.h"
 
 // by default we cache the mapping of the positions in UTF-8 string to the byte
@@ -90,7 +98,21 @@ class WXDLLIMPEXP_FWD_BASE wxString;
 #error wxNO_IMPLICIT_WXSTRING_ENCODING cannot be used in UTF-8 only builds
 #endif
 
-#endif
+#endif // wxNO_IMPLICIT_WXSTRING_ENCODING
+
+#if !wxUSE_UNSAFE_WXSTRING_CONV
+    #ifndef wxNO_UNSAFE_WXSTRING_CONV
+        #define wxNO_UNSAFE_WXSTRING_CONV
+    #endif
+#endif // wxUSE_UNSAFE_WXSTRING_CONV
+
+// enabling implicit conversions to std::[w]string is incompatible with having
+// implicit conversions to char*/wchar_t*.
+#if wxUSE_STD_STRING_CONV_IN_WXSTRING
+    #ifndef wxNO_IMPLICIT_WXSTRING_CONV_TO_PTR
+        #define wxNO_IMPLICIT_WXSTRING_CONV_TO_PTR
+    #endif
+#endif // wxUSE_STD_STRING_CONV_IN_WXSTRING
 
 namespace wxPrivate
 {
@@ -274,6 +296,7 @@ public:
     ~wxStringIteratorNode()
         { clear(); }
 
+    inline void clear();
     inline void set(const wxString *str, wxStringImpl::const_iterator *citer)
         { clear(); DoSet(str, citer, nullptr); }
     inline void set(const wxString *str, wxStringImpl::iterator *iter)
@@ -285,7 +308,6 @@ public:
     wxStringIteratorNode *m_prev{nullptr}, *m_next{nullptr};
 
 private:
-    inline void clear();
     inline void DoSet(const wxString *str,
                       wxStringImpl::const_iterator *citer,
                       wxStringImpl::iterator *iter);
@@ -447,8 +469,8 @@ private:
       unsigned lastUsed;
   };
 
-  static wxTHREAD_SPECIFIC_DECL Cache ms_cache;
-  static Cache& GetCache() { return ms_cache; }
+  // Implemented out of line because per-thread variable can't be DLL exported.
+  static Cache& GetCache();
 
   static Cache::Element *GetCacheBegin() { return GetCache().cached; }
   static Cache::Element *GetCacheEnd() { return GetCacheBegin() + Cache::SIZE; }
@@ -794,7 +816,7 @@ public:
       WX_STR_ITERATOR_IMPL(iterator, wxChar*, wxUniCharRef);
 
   public:
-      iterator() {}
+      iterator() = default;
       iterator(const iterator& i)
           : m_cur(i.m_cur), m_node(i.str(), &m_cur) {}
       iterator& operator=(const iterator& i)
@@ -843,7 +865,7 @@ public:
       WX_STR_ITERATOR_IMPL(const_iterator, const wxChar*, wxUniChar);
 
   public:
-      const_iterator() {}
+      const_iterator() = default;
       const_iterator(const const_iterator& i)
           : m_cur(i.m_cur), m_node(i.str(), &m_cur) {}
       const_iterator(const iterator& i)
@@ -903,7 +925,7 @@ public:
       WX_STR_ITERATOR_IMPL(iterator, wxChar*, wxUniCharRef);
 
   public:
-      iterator() {}
+      iterator() = default;
       reference operator*()
         { return wxUniCharRef::CreateForString(m_cur); }
 
@@ -936,7 +958,7 @@ public:
       WX_STR_ITERATOR_IMPL(const_iterator, const wxChar*, wxUniChar);
 
   public:
-      const_iterator() {}
+      const_iterator() = default;
       const_iterator(const iterator& i) : m_cur(i.m_cur) {}
 
       const_reference operator*() const
@@ -987,7 +1009,17 @@ public:
       // This is logically equivalent to strlen(str.mb_str()) but avoids
       // actually converting the string to multibyte and just computes the
       // length that it would have after conversion.
+
+      // Note that in UTF-8 build we need to use the actual wide character
+      // buffer length and not the string length, as it may be different when
+      // using surrogates, but in wchar_t build they're the same by definition
+      // and we can avoid creating an extra buffer.
+#if wxUSE_UNICODE_UTF8
+      const wxScopedWCharBuffer wbuf(str.wc_str());
+      const size_t ofs = wxConvLibc.FromWChar(nullptr, 0, wbuf.data(), wbuf.length());
+#else // wxUSE_UNICODE_WCHAR
       const size_t ofs = wxConvLibc.FromWChar(nullptr, 0, str.wc_str(), str.length());
+#endif
       return ofs == wxCONV_FAILED ? 0 : static_cast<ptrdiff_t>(ofs);
   }
 
@@ -1006,7 +1038,7 @@ public:
       typedef typename T::reference reference;
       typedef typename T::pointer *pointer;
 
-      reverse_iterator_impl() {}
+      reverse_iterator_impl() = default;
       reverse_iterator_impl(iterator_type i) : m_cur(i) {}
 
       iterator_type base() const { return m_cur; }
@@ -1094,7 +1126,7 @@ private:
 public:
   // constructors and destructor
     // ctor for an empty string
-  wxString() {}
+  wxString() = default;
 
     // copy ctor
   wxString(const wxString& stringSrc) : m_impl(stringSrc.m_impl) { }
@@ -1203,15 +1235,23 @@ public:
     { assign(std::move(str), nLength); }
 
 
-#if wxUSE_STRING_POS_CACHE
+#if wxUSE_UNICODE_UTF8
   ~wxString()
   {
+#if wxUSE_STRING_POS_CACHE
       // we need to invalidate our cache entry as another string could be
       // recreated at the same address (unlikely, but still possible, with the
       // heap-allocated strings but perfectly common with stack-allocated ones)
       InvalidateCache();
-  }
 #endif // wxUSE_STRING_POS_CACHE
+
+      // We also need to clear any still existing iterators pointing into this
+      // string, as otherwise clearing them later, when they're destroyed,
+      // would try to use a dangling string pointer stored in them.
+      while ( m_iterators.ptr )
+          m_iterators.ptr->clear();
+  }
+#endif // wxUSE_UNICODE_UTF8
 
   #if wxUSE_UNICODE_WCHAR
     wxString(const std::wstring& str) : m_impl(str) {}
@@ -1221,9 +1261,19 @@ public:
         { assign(str.c_str(), str.length()); }
   #endif
 
+#ifdef wxHAS_STD_STRING_VIEW
+    explicit wxString(std::wstring_view view)
+        { assign(view.data(), view.length()); }
+#endif  // wxHAS_STD_STRING_VIEW
+
 #ifndef wxNO_IMPLICIT_WXSTRING_ENCODING
   wxString(const std::string& str)
       { assign(str.c_str(), str.length()); }
+
+    #ifdef wxHAS_STD_STRING_VIEW
+        explicit wxString(std::string_view view)
+            { assign(view.data(), view.length()); }
+    #endif  // wxHAS_STD_STRING_VIEW
 #endif // wxNO_IMPLICIT_WXSTRING_ENCODING
 
   // Also always provide explicit conversions to std::[w]string in any case,
@@ -1233,6 +1283,7 @@ public:
   #if wxUSE_UNICODE_WCHAR
     #define wxStringToStdWstringRetType const std::wstring&
     const std::wstring& ToStdWstring() const { return m_impl; }
+    const std::wstring& wc_string() const { return m_impl; }
   #else // wxUSE_UNICODE_UTF8
     // wxStringImpl is either not std::string or needs conversion
     #define wxStringToStdWstringRetType std::wstring
@@ -1240,6 +1291,10 @@ public:
     {
         wxScopedWCharBuffer buf(wc_str());
         return std::wstring(buf.data(), buf.length());
+    }
+    std::wstring wc_string() const
+    {
+        return ToStdWstring();
     }
   #endif
 
@@ -1269,9 +1324,9 @@ public:
     // they conflict with the implicit conversions to "const char/wchar_t *"
     // which we use for backwards compatibility but do provide them if
     // explicitly requested.
-#if wxUSE_UNSAFE_WXSTRING_CONV && !defined(wxNO_UNSAFE_WXSTRING_CONV)
+#if !defined(wxNO_UNSAFE_WXSTRING_CONV)
   operator wxStringToStdStringRetType() const { return ToStdString(); }
-#endif // wxUSE_UNSAFE_WXSTRING_CONV
+#endif // !wxNO_UNSAFE_WXSTRING_CONV
   operator wxStringToStdWstringRetType() const { return ToStdWstring(); }
 #endif // wxUSE_STD_STRING_CONV_IN_WXSTRING
 
@@ -1280,8 +1335,6 @@ public:
 
   wxString Clone() const
   {
-      // make a deep copy of the string, i.e. the returned string will have
-      // ref count = 1 with refcounted implementation
       return wxString::FromImpl(wxStringImpl(m_impl.c_str(), m_impl.length()));
   }
 
@@ -1350,7 +1403,7 @@ public:
   size_type capacity() const { return m_impl.capacity(); }
   void reserve(size_t sz) { m_impl.reserve(sz); }
 
-  void shrink_to_fit() { Shrink(); }
+  void shrink_to_fit() { m_impl.shrink_to_fit(); }
 
   void resize(size_t nSize, wxUniChar ch = wxT('\0'))
   {
@@ -1518,24 +1571,18 @@ public:
     // implicit conversion to wxCStrData
     operator wxCStrData() const { return c_str(); }
 
-    // the first two operators conflict with operators for conversion to
-    // std::string and they must be disabled if those conversions are enabled;
-    // the next one only makes sense if conversions to char* are also defined
-    // and not defining it in STL build also helps us to get more clear error
-    // messages for the code which relies on implicit conversion to char* in
-    // STL build
-#if !wxUSE_STD_STRING_CONV_IN_WXSTRING
+#if !defined(wxNO_IMPLICIT_WXSTRING_CONV_TO_PTR)
     operator const wchar_t*() const { return c_str(); }
 
-#if wxUSE_UNSAFE_WXSTRING_CONV && !defined(wxNO_UNSAFE_WXSTRING_CONV)
+#if !defined(wxNO_UNSAFE_WXSTRING_CONV)
     operator const char*() const { return c_str(); }
     // implicit conversion to untyped pointer for compatibility with previous
     // wxWidgets versions: this is the same as conversion to const char * so it
     // may fail!
     operator const void*() const { return c_str(); }
-#endif // wxUSE_UNSAFE_WXSTRING_CONV && !defined(wxNO_UNSAFE_WXSTRING_CONV)
+#endif // !defined(wxNO_UNSAFE_WXSTRING_CONV)
 
-#endif // !wxUSE_STD_STRING_CONV_IN_WXSTRING
+#endif // !defined(wxNO_IMPLICIT_WXSTRING_CONV_TO_PTR)
 
     // identical to c_str(), for MFC compatibility
     const wxCStrData GetData() const { return c_str(); }
@@ -1671,6 +1718,14 @@ public:
     const wxScopedCharBuffer utf8_str() const { return mb_str(wxMBConvUTF8()); }
 #endif // wxUSE_UNICODE_UTF8/wxUSE_UNICODE_WCHAR
 
+// Conversion from std::string_view is the same for both of the two cases above
+#ifdef wxHAS_STD_STRING_VIEW
+    static wxString FromUTF8Unchecked(std::string_view view)
+      { return FromUTF8Unchecked(view.data(), view.length()); }
+    static wxString FromUTF8(std::string_view view)
+      { return FromUTF8(view.data(), view.length()); }
+#endif // wxHAS_STD_STRING_VIEW
+
     const wxScopedCharBuffer ToUTF8() const { return utf8_str(); }
 
     // functions for storing binary data in wxString:
@@ -1685,7 +1740,7 @@ public:
     // conversions with (possible) format conversions: have to return a
     // buffer with temporary data
     //
-    // the functions defined (in either Unicode or ANSI) mode are mb_str() to
+    // All builds of the library define the same functions: mb_str() to
     // return an ANSI (multibyte) string, wc_str() to return a wide string and
     // fn_str() to return a string which should be used with the OS APIs
     // accepting the file names. The return value is always the same, but the
@@ -1825,6 +1880,29 @@ public:
     // from wxScopedCharBuffer
   wxString& operator=(const wxScopedCharBuffer& s)
     { return assign(s); }
+#endif // wxNO_IMPLICIT_WXSTRING_ENCODING
+
+#if wxUSE_UNICODE_WCHAR
+  wxString& operator=(const std::wstring& str) { m_impl = str; return *this; }
+  wxString& operator=(std::wstring&& str) noexcept { m_impl = std::move(str); return *this; }
+#else // wxUSE_UNICODE_UTF8
+  wxString& operator=(const std::wstring& str)
+    { return assign(str.c_str(), str.length()); }
+#endif
+
+#ifdef wxHAS_STD_STRING_VIEW
+  wxString& operator=(std::wstring_view view)
+    { return assign(view.data(), view.length()); }
+#endif  // wxHAS_STD_STRING_VIEW
+
+#ifndef wxNO_IMPLICIT_WXSTRING_ENCODING
+  wxString& operator=(const std::string& str)
+    { return assign(str.c_str(), str.length()); }
+
+    #ifdef wxHAS_STD_STRING_VIEW
+      wxString& operator=(std::string_view view)
+        { return assign(view.data(), view.length()); }
+    #endif  // wxHAS_STD_STRING_VIEW
 #endif // wxNO_IMPLICIT_WXSTRING_ENCODING
 
   // string concatenation
@@ -2223,8 +2301,7 @@ public:
     // only works if the data of this string is not shared
   bool Alloc(size_t nLen) { reserve(nLen); return capacity() >= nLen; }
     // minimize the string's memory
-    // only works if the data of this string is not shared
-  bool Shrink();
+  bool Shrink() { shrink_to_fit(); return true; }
 
   // wxWidgets version 1 compatibility functions
 
@@ -3540,6 +3617,8 @@ private:
 
   friend class WXDLLIMPEXP_FWD_BASE wxStringIteratorNode;
   friend class WXDLLIMPEXP_FWD_BASE wxUniCharRef;
+  friend class wxUTF8StringBuffer;
+  friend class wxUTF8StringBufferLength;
 #endif // wxUSE_UNICODE_UTF8
 
   friend class WXDLLIMPEXP_FWD_BASE wxCStrData;
@@ -3645,7 +3724,7 @@ struct wxStringAsBufHelper<wchar_t>
     {
         wxScopedWCharBuffer wbuf(s.wc_str());
         if ( len )
-            *len = wxWcslen(wbuf);
+            *len = wbuf.length();
         return wbuf;
     }
 };
@@ -3785,8 +3864,89 @@ typedef wxStringInternalBufferLength          wxStringBufferLength;
 #endif // wxUSE_UNICODE_UTF8/wxUSE_UNICODE_WCHAR
 
 #if wxUSE_UNICODE_UTF8
-typedef wxStringInternalBuffer                wxUTF8StringBuffer;
-typedef wxStringInternalBufferLength          wxUTF8StringBufferLength;
+
+// Special implementation of buffer classes for UTF-8 build which exploit the
+// fact that we can write directly to std::string used by wxString, avoiding an
+// extra copy which could be significant for long strings.
+
+namespace wxPrivate
+{
+
+class wxUTF8StringBufferBase
+{
+public:
+    using CharType = char;
+
+    ~wxUTF8StringBufferBase()
+    {
+        // This class works only with UTF-8 strings, so we need to check if the
+        // string has valid contents. Note that it isn't an error if it
+        // doesn't, as it can happen that the function we use this buffer with
+        // (e.g. vsnprintf()) writes something invalid into the provided buffer
+        // in some cases.
+        if ( !wxStringOperations::IsValidUtf8String(m_str.c_str()) )
+            m_str.clear();
+    }
+
+    operator char*() const { return const_cast<char*>(m_str.c_str()); }
+
+protected:
+    explicit wxUTF8StringBufferBase(std::string& str, size_t size)
+        : m_str{str}
+    {
+        m_str.resize(size);
+    }
+
+    std::string& m_str;
+
+    wxDECLARE_NO_COPY_CLASS(wxUTF8StringBufferBase);
+};
+
+} // wxPrivate
+
+class wxUTF8StringBuffer : public wxPrivate::wxUTF8StringBufferBase
+{
+public:
+    wxUTF8StringBuffer(wxString& str, size_t size)
+        : wxPrivate::wxUTF8StringBufferBase{str.m_impl, size}
+    {
+    }
+
+    ~wxUTF8StringBuffer()
+    {
+        // This class works only with NUL-terminated strings, so we need to
+        // resize the string to have the correct length.
+        m_str.resize(strlen(m_str.c_str()));
+    }
+
+private:
+    wxDECLARE_NO_COPY_CLASS(wxUTF8StringBuffer);
+};
+
+class wxUTF8StringBufferLength : public wxPrivate::wxUTF8StringBufferBase
+{
+public:
+    wxUTF8StringBufferLength(wxString& str, size_t size)
+        : wxPrivate::wxUTF8StringBufferBase{str.m_impl, size}
+    {
+    }
+
+    ~wxUTF8StringBufferLength()
+    {
+        wxASSERT_MSG( m_lenSet, "forgot to call SetLength()" );
+
+        m_str.resize(m_len);
+    }
+
+    void SetLength(size_t length) { m_len = length; m_lenSet = true; }
+
+protected:
+    size_t m_len = 0;
+    bool m_lenSet = false;
+
+    wxDECLARE_NO_COPY_CLASS(wxUTF8StringBufferLength);
+};
+
 #else // wxUSE_UNICODE_WCHAR
 
 // Note about inlined dtors in the classes below: this is done not for
@@ -4002,18 +4162,18 @@ namespace std
 
 #include "wx/iosfwrap.h"
 
-WXDLLIMPEXP_BASE wxSTD ostream& operator<<(wxSTD ostream&, const wxString&);
-WXDLLIMPEXP_BASE wxSTD ostream& operator<<(wxSTD ostream&, const wxCStrData&);
+WXDLLIMPEXP_BASE std::ostream& operator<<(std::ostream&, const wxString&);
+WXDLLIMPEXP_BASE std::ostream& operator<<(std::ostream&, const wxCStrData&);
 #ifndef wxNO_IMPLICIT_WXSTRING_ENCODING
-WXDLLIMPEXP_BASE wxSTD ostream& operator<<(wxSTD ostream&, const wxScopedCharBuffer&);
+WXDLLIMPEXP_BASE std::ostream& operator<<(std::ostream&, const wxScopedCharBuffer&);
 #endif // wxNO_IMPLICIT_WXSTRING_ENCODING
-WXDLLIMPEXP_BASE wxSTD ostream& operator<<(wxSTD ostream&, const wxScopedWCharBuffer&);
+WXDLLIMPEXP_BASE std::ostream& operator<<(std::ostream&, const wxScopedWCharBuffer&);
 
 #if defined(HAVE_WOSTREAM)
 
-WXDLLIMPEXP_BASE wxSTD wostream& operator<<(wxSTD wostream&, const wxString&);
-WXDLLIMPEXP_BASE wxSTD wostream& operator<<(wxSTD wostream&, const wxCStrData&);
-WXDLLIMPEXP_BASE wxSTD wostream& operator<<(wxSTD wostream&, const wxScopedWCharBuffer&);
+WXDLLIMPEXP_BASE std::wostream& operator<<(std::wostream&, const wxString&);
+WXDLLIMPEXP_BASE std::wostream& operator<<(std::wostream&, const wxCStrData&);
+WXDLLIMPEXP_BASE std::wostream& operator<<(std::wostream&, const wxScopedWCharBuffer&);
 
 #endif  // defined(HAVE_WOSTREAM)
 
@@ -4154,10 +4314,20 @@ void wxStringIteratorNode::DoSet(const wxString *str,
     m_str = str;
     if ( str )
     {
+        // When compiling with optimizations gcc considers "this" pointers used
+        // below dangling, even if this is really not the case.
+#if wxCHECK_GCC_VERSION(12,1)
+        wxGCC_ONLY_WARNING_SUPPRESS(dangling-pointer)
+#endif
+
         m_next = str->m_iterators.ptr;
         const_cast<wxString*>(m_str)->m_iterators.ptr = this;
         if ( m_next )
             m_next->m_prev = this;
+
+#if wxCHECK_GCC_VERSION(12,1)
+        wxGCC_ONLY_WARNING_RESTORE(dangling-pointer)
+#endif
     }
     else
     {

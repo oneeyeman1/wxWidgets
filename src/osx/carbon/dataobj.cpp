@@ -2,7 +2,6 @@
 // Name:        src/osx/carbon/dataobj.cpp
 // Purpose:     implementation of wxDataObject class
 // Author:      Stefan Csomor
-// Modified by:
 // Created:     10/21/99
 // Copyright:   (c) 1999 Stefan Csomor
 // Licence:     wxWindows licence
@@ -31,6 +30,8 @@
 
 #include "wx/osx/private.h"
 #include "wx/osx/private/datatransfer.h"
+
+#include <memory>
 
 static CFStringRef kUTTypeTraditionalMacText = CFSTR("com.apple.traditional-mac-plain-text");
 
@@ -423,7 +424,7 @@ bool wxDataObject::ReadFromSource(wxOSXDataSource * source)
             
             for ( size_t itemIndex = 0; itemIndex < itemCount && !transferred; ++itemIndex)
             {
-                wxScopedPtr<const wxOSXDataSourceItem> sitem(source->GetItem(itemIndex));
+                std::unique_ptr<const wxOSXDataSourceItem> sitem(source->GetItem(itemIndex));
                 
                 wxDataFormat::NativeFormat nativeFormat = sitem->AvailableType(typesarray);
                 CFDataRef flavorData = sitem->DoGetData(nativeFormat);

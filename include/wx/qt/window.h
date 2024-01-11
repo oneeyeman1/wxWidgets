@@ -9,49 +9,42 @@
 #ifndef _WX_QT_WINDOW_H_
 #define _WX_QT_WINDOW_H_
 
+#include <memory>
+
 class QShortcut;
 template < class T > class QList;
 
-class QWidget;
-class QScrollArea;
-class QScrollBar;
-class QPicture;
+class QAbstractScrollArea;
 class QPainter;
+class QPicture;
+class QScrollBar;
+class QWidget;
 
+class QCloseEvent;
+class QContextMenuEvent;
+class QEvent;
+class QFocusEvent;
+class QKeyEvent;
 class QPaintEvent;
 class QResizeEvent;
 class QWheelEvent;
-class QKeyEvent;
 class QMouseEvent;
-class QEvent;
 class QMoveEvent;
-class QEvent;
-class QEvent;
-class QCloseEvent;
-class QContextMenuEvent;
-class QFocusEvent;
 
-class WXDLLIMPEXP_FWD_CORE wxScrollBar;
 class WXDLLIMPEXP_FWD_CORE wxQtShortcutHandler;
 
 /* wxQt specific notes:
  *
  * Remember to implement the Qt object getters on all subclasses:
  *  - GetHandle() returns the Qt object
- *  - QtGetScrollBarsContainer() returns the widget where scrollbars are placed
- * For example, for wxFrame, GetHandle() is the QMainWindow,
- * QtGetScrollBarsContainer() is the central widget and QtGetContainer() is a widget
- * in a layout inside the central widget that also contains the scrollbars.
- * Return 0 from QtGetScrollBarsContainer() to disable SetScrollBar() and friends
- * for wxWindow subclasses.
  *
  *
- * Event handling is achieved by using the template class wxQtEventForwarder
- * found in winevent_qt.(h|cpp) to send all Qt events here to QtHandleXXXEvent()
- * methods. All these methods receive the Qt event and the handler. This is
- * done because events of the containers (the scrolled part of the window) are
- * sent to the same wxWindow instance, that must be able to differentiate them
- * as some events need different handling (paintEvent) depending on that.
+ * Event handling is achieved by using the template class wxQtEventSignalHandler
+ * found in winevent.h to send all Qt events here to QtHandleXXXEvent() methods.
+ * All these methods receive the Qt event and the handler. This is done because
+ * events of the containers (the scrolled part of the window) are sent to the
+ * same wxWindow instance, that must be able to differentiate them as some events
+ * need different handling (paintEvent) depending on that.
  * We pass the QWidget pointer to all event handlers for consistency.
  */
 class WXDLLIMPEXP_CORE wxWindowQt : public wxWindowBase
@@ -73,7 +66,8 @@ public:
                 long style = 0,
                 const wxString& name = wxASCII_STR(wxPanelNameStr));
 
-    // Used by all window classes in the widget creation process.
+    // Derived classes have to call PostCreation() explicitly if they don't call
+    // our Create() method during widget creation process.
     void PostCreation( bool generic = true );
 
     void AddChild( wxWindowBase *child ) override;
@@ -134,6 +128,9 @@ public:
     virtual bool SetBackgroundColour(const wxColour& colour) override;
     virtual bool SetForegroundColour(const wxColour& colour) override;
 
+    virtual void SetDoubleBuffered(bool on) override;
+    virtual bool IsDoubleBuffered() const override;
+
     QWidget *GetHandle() const override;
 
 #if wxUSE_DRAG_AND_DROP
@@ -146,9 +143,11 @@ public:
     virtual void SetAcceleratorTable( const wxAcceleratorTable& accel ) override;
 #endif // wxUSE_ACCEL
 
+    virtual bool EnableTouchEvents(int eventsMask) override;
+
     // wxQt implementation internals:
 
-    // Caller maintains ownership of pict - window will NOT delete it
+    // Takes ownership of pict - window will delete it
     void QtSetPicture( QPicture* pict );
 
     QPainter *QtGetPainter();
@@ -173,8 +172,6 @@ public:
 #if wxUSE_ACCEL
     virtual void QtHandleShortcut ( int command );
 #endif // wxUSE_ACCEL
-
-    virtual QScrollArea *QtGetScrollBarsContainer() const;
 
 #if wxUSE_TOOLTIPS
     // applies tooltip to the widget.
@@ -206,6 +203,8 @@ protected:
     virtual void DoSetClientSize(int width, int height) override;
     virtual void DoGetClientSize(int *width, int *height) const override;
 
+    virtual wxSize DoGetBestSize() const override;
+
     virtual void DoMoveWindow(int x, int y, int width, int height) override;
 
 #if wxUSE_TOOLTIPS
@@ -221,16 +220,13 @@ protected:
     // itself.
     virtual QWidget* QtGetParentWidget() const { return GetHandle(); }
 
-    virtual bool EnableTouchEvents(int eventsMask) override;
-
-    QWidget *m_qtWindow;
+    QWidget             *m_qtWindow;
+    QAbstractScrollArea *m_qtContainer;  // either nullptr or the same as m_qtWindow pointer
+                                         // if m_qtWindow derives from QAbstractScrollArea,
+                                         // e.g. QListWidget and QTextEdit.
 
 private:
     void Init();
-    QScrollArea *m_qtContainer;  // either nullptr or the same as m_qtWindow pointer
-
-    QScrollBar *m_horzScrollBar; // owned by m_qtWindow when allocated
-    QScrollBar *m_vertScrollBar; // owned by m_qtWindow when allocated
 
     // Return the viewport of m_qtContainer, if it's used, or just m_qtWindow.
     //
@@ -238,18 +234,17 @@ private:
     QWidget *QtGetClientWidget() const;
 
     QScrollBar *QtGetScrollBar( int orientation ) const;
-    QScrollBar *QtSetScrollBar( int orientation, QScrollBar *scrollBar=nullptr );
 
     bool QtSetBackgroundStyle();
 
-    QPicture *m_qtPicture;                                   // not owned
-    wxScopedPtr<QPainter> m_qtPainter;                       // always allocated
+    std::unique_ptr<QPicture> m_qtPicture;                   // owned by this window
+    std::unique_ptr<QPainter> m_qtPainter;                   // always allocated
 
     bool m_mouseInside;
 
 #if wxUSE_ACCEL
     wxVector<QShortcut*> m_qtShortcuts; // owned by whatever GetHandle() returns
-    wxScopedPtr<wxQtShortcutHandler> m_qtShortcutHandler;    // always allocated
+    std::unique_ptr<wxQtShortcutHandler> m_qtShortcutHandler; // always allocated
     bool m_processingShortcut;
 #endif // wxUSE_ACCEL
 

@@ -169,6 +169,10 @@ typedef pid_t GPid;
 
 #define wxUSE_REPRODUCIBLE_BUILD 1
 
+#define wxUSE_UNICODE_UTF8 0
+
+#define wxUSE_UTF8_LOCALE_ONLY 0
+
 #define wxUSE_EXCEPTIONS 1
 
 #define wxUSE_EXTENDED_RTTI 0
@@ -189,11 +193,9 @@ typedef pid_t GPid;
 
 #define wxUSE_PRINTF_POS_PARAMS      0
 
-#define wxUSE_STL 0
+#define wxUSE_STD_CONTAINERS 0
 
-#define wxUSE_STD_CONTAINERS wxUSE_STL
-
-#define wxUSE_STD_STRING_CONV_IN_WXSTRING wxUSE_STL
+#define wxUSE_STD_STRING_CONV_IN_WXSTRING 0
 
 #define wxUSE_LONGLONG      1
 
@@ -652,9 +654,6 @@ typedef pid_t GPid;
 #define wxUSE_SELECT_DISPATCHER 1
 #define wxUSE_EPOLL_DISPATCHER 0
 
-#define wxUSE_UNICODE_UTF8 0
-#define wxUSE_UTF8_LOCALE_ONLY 0
-
 /*
    Use GStreamer for Unix.
 
@@ -864,9 +863,6 @@ typedef pid_t GPid;
 
 /* The type of statvfs(2) argument */
 #undef WX_STATFS_T
-
-/* The signal handler prototype */
-#define wxTYPE_SA_HANDLER int
 
 /* gettimeofday() usually takes 2 arguments, but some really old systems might
  * have only one, in which case define WX_GETTIMEOFDAY_NO_TZ */

@@ -2,7 +2,6 @@
 // Name:        wx/private/overlay.h
 // Purpose:     wxOverlayImpl declaration
 // Author:      Stefan Csomor
-// Modified by:
 // Created:     2006-10-20
 // Copyright:   (c) wxWidgets team
 // Licence:     wxWindows licence
@@ -22,6 +21,8 @@
 #elif defined(__WXGTK3__)
     #define wxHAS_NATIVE_OVERLAY 1
     #define wxHAS_GENERIC_OVERLAY 1
+#elif defined(__WXQT__)
+    #define wxHAS_NATIVE_OVERLAY 1
 #else
     #define wxHAS_GENERIC_OVERLAY 1
 #endif

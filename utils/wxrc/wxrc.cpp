@@ -24,11 +24,10 @@
 #include "wx/filename.h"
 #include "wx/wfstream.h"
 #include "wx/utils.h"
-#include "wx/hashset.h"
 #include "wx/mimetype.h"
 #include "wx/vector.h"
 
-WX_DECLARE_HASH_SET(wxString, wxStringHash, wxStringEqual, StringSet);
+#include <unordered_set>
 
 class XRCWidgetData
 {
@@ -51,7 +50,7 @@ class XRCWndClassData
 private:
     wxString m_className;
     wxString m_parentClassName;
-    StringSet m_ancestorClassNames;
+    std::unordered_set<wxString> m_ancestorClassNames;
     ArrayOfXRCWidgetData m_wdata;
 
     void BrowseXmlNode(wxXmlNode* node)
@@ -171,7 +170,7 @@ public:
                     m_className +
                     wxT("(") +
                         *m_ancestorClassNames.begin() +
-                        wxT(" *parent=NULL){\n") +
+                        wxT(" *parent=nullptr){\n") +
                     wxT("  InitWidgetsFromXRC((wxWindow *)parent);\n")
                     wxT(" }\n")
                     wxT("};\n")
@@ -180,15 +179,13 @@ public:
         else
         {
             file.Write(m_className + wxT("(){\n") +
-                       wxT("  InitWidgetsFromXRC(NULL);\n")
+                       wxT("  InitWidgetsFromXRC(nullptr);\n")
                        wxT(" }\n")
                        wxT("};\n"));
 
-            for ( StringSet::const_iterator it = m_ancestorClassNames.begin();
-                  it != m_ancestorClassNames.end();
-                  ++it )
+            for ( const auto& name : m_ancestorClassNames )
             {
-                file.Write(m_className + wxT("(") + *it + wxT(" *parent){\n") +
+                file.Write(m_className + wxT("(") + name + wxT(" *parent){\n") +
                             wxT("  InitWidgetsFromXRC((wxWindow *)parent);\n")
                             wxT(" }\n")
                             wxT("};\n"));
@@ -255,6 +252,8 @@ wxIMPLEMENT_APP_CONSOLE(XmlResApp);
 
 int XmlResApp::OnRun()
 {
+    wxGCC_WARNING_SUPPRESS(missing-field-initializers)
+
     static const wxCmdLineEntryDesc cmdLineDesc[] =
     {
         { wxCMD_LINE_SWITCH, "h", "help",  "show help message", wxCMD_LINE_VAL_NONE, wxCMD_LINE_OPTION_HELP },
@@ -277,6 +276,8 @@ int XmlResApp::OnRun()
 
         wxCMD_LINE_DESC_END
     };
+
+    wxGCC_WARNING_RESTORE(missing-field-initializers)
 
     wxCmdLineParser parser(cmdLineDesc, argc, argv);
 
@@ -522,24 +523,58 @@ void XmlResApp::FindFilesInXML(wxXmlNode *node, wxArrayString& flist, const wxSt
             (n->GetType() == wxXML_TEXT_NODE ||
              n->GetType() == wxXML_CDATA_SECTION_NODE))
         {
-            wxString fullname;
-            if (wxIsAbsolutePath(n->GetContent()) || inputPath.empty())
-                fullname = n->GetContent();
-            else
-                fullname = inputPath + wxFILE_SEP_PATH + n->GetContent();
+            // At least <bitmap> content can include several semi-colon
+            // separated paths corresponding to the different resolutions of
+            // the bitmap, so check for this.
+            wxArrayString internalNames;
+            const wxArrayString paths = wxSplit(n->GetContent(), ';', '\0');
+            for (size_t i = 0; i < paths.size(); ++i)
+            {
+                const wxString& path = paths[i];
 
-            if (flagVerbose)
-                wxPrintf(wxT("adding     %s...\n"), fullname);
+                wxString fullname;
+                if (wxIsAbsolutePath(path) || inputPath.empty())
+                    fullname = path;
+                else
+                    fullname = inputPath + wxFILE_SEP_PATH + path;
 
-            wxString filename = GetInternalFileName(n->GetContent(), flist);
-            n->SetContent(filename);
+                if (flagVerbose)
+                    wxPrintf(wxT("adding     %s...\n"), fullname);
 
-            if (flist.Index(filename) == wxNOT_FOUND)
-                flist.Add(filename);
+                wxFileInputStream sin(fullname);
+                if (!sin)
+                {
+                    // Note that the full name was already given in the error
+                    // message logged by wxFileInputStream itself, so don't repeat
+                    // it here.
+                    wxLogError("Failed to read file referenced by \"%s\" at %d",
+                               node->GetName(), node->GetLineNumber());
+                    retCode = 1;
+                }
+                else
+                {
+                    wxString filename = GetInternalFileName(path, flist);
 
-            wxFileInputStream sin(fullname);
-            wxFileOutputStream sout(parOutputPath + wxFILE_SEP_PATH + filename);
-            sin.Read(sout); // copy the stream
+                    // Copy the entire stream to the output file.
+                    wxFileOutputStream sout(parOutputPath + wxFILE_SEP_PATH + filename);
+                    if ( sin.Read(sout).GetLastError() != wxSTREAM_EOF || !sout )
+                    {
+                        wxLogError("Failed to save \"%s\" referenced by \"%s\" at %d"
+                                   " to a temporary file",
+                                   fullname, node->GetName(), node->GetLineNumber());
+                        retCode = 1;
+                    }
+                    else
+                    {
+                        internalNames.push_back(filename);
+
+                        if (flist.Index(filename) == wxNOT_FOUND)
+                            flist.Add(filename);
+                    }
+                }
+            }
+
+            n->SetContent(wxJoin(internalNames, ';', '\0'));
         }
 
         // subnodes:

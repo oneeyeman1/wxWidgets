@@ -10,8 +10,9 @@
 #ifndef _WX_PRIVATE_FDIODISPATCHER_H_
 #define _WX_PRIVATE_FDIODISPATCHER_H_
 
-#include "wx/hashmap.h"
 #include "wx/private/fdiohandler.h"
+
+#include <unordered_map>
 
 // those flags describes sets where descriptor should be added
 enum wxFDIODispatcherEntryFlags
@@ -58,7 +59,7 @@ public:
     // -1 if an error occurred
     virtual int Dispatch(int timeout = TIMEOUT_INFINITE) = 0;
 
-    virtual ~wxFDIODispatcher() { }
+    virtual ~wxFDIODispatcher() = default;
 };
 
 //entry for wxFDIOHandlerMap
@@ -81,13 +82,7 @@ struct wxFDIOHandlerEntry
 };
 
 // this hash is used to map file descriptors to their handlers
-WX_DECLARE_HASH_MAP(
-  int,
-  wxFDIOHandlerEntry,
-  wxIntegerHash,
-  wxIntegerEqual,
-  wxFDIOHandlerMap
-);
+using wxFDIOHandlerMap = std::unordered_map<int, wxFDIOHandlerEntry>;
 
 // FDIODispatcher that holds map fd <-> FDIOHandler, this should be used if
 // this map isn't maintained elsewhere already as it is usually needed anyhow
@@ -110,7 +105,7 @@ public:
     // unregister descriptor previously registered with RegisterFD()
     virtual bool UnregisterFD(int fd) override;
 
-    virtual ~wxMappedFDIODispatcher() { }
+    virtual ~wxMappedFDIODispatcher() = default;
 
 protected:
     // the fd -> handler map containing all the registered handlers

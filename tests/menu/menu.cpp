@@ -20,11 +20,14 @@
 #endif // WX_PRECOMP
 
 #include "wx/menu.h"
-#include "wx/scopedptr.h"
 #include "wx/translation.h"
 #include "wx/uiaction.h"
 
+#include "waitfor.h"
+
 #include <stdarg.h>
+
+#include <memory>
 
 // ----------------------------------------------------------------------------
 // helper
@@ -603,7 +606,13 @@ void MenuTestCase::Events()
     // Invoke the accelerator.
     m_frame->Show();
     m_frame->SetFocus();
-    wxYield();
+
+    // Wait for m_frame to become focused. Because (at least under wxQt when running
+    // the entire test suite) the first test below would fail due to the simulation
+    // starts before the frame become focused.
+    WaitFor("the frame to become focused", [this]() {
+        return m_frame->HasFocus();
+    });
 
     wxUIActionSimulator sim;
     sim.KeyDown(WXK_F1);
@@ -668,7 +677,7 @@ namespace
 
 void VerifyAccelAssigned( wxString labelText, int keycode )
 {
-    const wxScopedPtr<wxAcceleratorEntry> entry(
+    const std::unique_ptr<wxAcceleratorEntry> entry(
         wxAcceleratorEntry::Create( labelText )
     );
 

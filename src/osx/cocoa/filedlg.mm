@@ -2,7 +2,6 @@
 // Name:        src/cocoa/filedlg.mm
 // Purpose:     wxFileDialog for wxCocoa
 // Author:      Ryan Norton
-// Modified by:
 // Created:     2004-10-02
 // Copyright:   (c) Ryan Norton
 // Licence:     wxWindows licence
@@ -125,6 +124,16 @@ void wxFileDialog::Create(
 
 wxFileDialog::~wxFileDialog()
 {
+    if ( m_extraControl )
+    {
+        m_extraControl->Destroy();
+        // if this is set, then m_filterPanel points to the same instance
+        // so no need to delete that one as well
+    }
+    else if ( m_filterPanel )
+    {
+        m_filterPanel->Destroy();
+    }
 }
 
 bool wxFileDialog::SupportsExtraControl() const
@@ -436,10 +445,13 @@ void wxFileDialog::SetupExtraControls(WXWindow nativeWindow)
     {
         [accView removeFromSuperview];
         [panel setAccessoryView:accView];
+
+        wxCLANG_WARNING_SUPPRESS(undeclared-selector)
         if ([panel respondsToSelector:@selector(setAccessoryViewDisclosed)])
         {
             [(id)panel setAccessoryViewDisclosed:YES];
         }
+        wxCLANG_WARNING_RESTORE(undeclared-selector)
     }
     else
     {

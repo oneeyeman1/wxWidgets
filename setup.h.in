@@ -117,9 +117,12 @@
 
 #define wxDIALOG_UNIT_COMPATIBILITY   0
 
-#define wxUSE_UNSAFE_WXSTRING_CONV 0
-
 #define wxUSE_REPRODUCIBLE_BUILD 0
+
+
+#define wxUSE_UNICODE_UTF8 0
+
+#define wxUSE_UTF8_LOCALE_ONLY 0
 
 
 
@@ -152,12 +155,14 @@
 #define wxUSE_PRINTF_POS_PARAMS      0
 
 
-#define wxUSE_STL 0
-
 #define wxUSE_STD_CONTAINERS 0
 
 #define wxUSE_STD_IOSTREAM  0
-#define wxUSE_STD_STRING_CONV_IN_WXSTRING wxUSE_STL
+
+
+#define wxUSE_UNSAFE_WXSTRING_CONV 0
+
+#define wxUSE_STD_STRING_CONV_IN_WXSTRING 0
 
 
 #define wxUSE_LONGLONG      0
@@ -594,9 +599,6 @@
 #define wxUSE_SELECT_DISPATCHER 0
 #define wxUSE_EPOLL_DISPATCHER 0
 
-#define wxUSE_UNICODE_UTF8 0
-#define wxUSE_UTF8_LOCALE_ONLY 0
-
 /*
    Use GStreamer for Unix.
 
@@ -788,9 +790,6 @@
 /* The type of statvfs(2) argument */
 #undef WX_STATFS_T
 
-/* The signal handler prototype */
-#undef wxTYPE_SA_HANDLER
-
 /* gettimeofday() usually takes 2 arguments, but some really old systems might
  * have only one, in which case define WX_GETTIMEOFDAY_NO_TZ */
 #undef WX_GETTIMEOFDAY_NO_TZ
@@ -935,6 +934,9 @@
 
 /* Define if you have the dladdr function.  */
 #undef HAVE_DLADDR
+
+/* Define if you have the dl_iterate_phdr function.  */
+#undef HAVE_DL_ITERATE_PHDR
 
 /* Define if you have Posix fnctl() function. */
 #undef HAVE_FCNTL
@@ -1106,6 +1108,9 @@
 
 /* Define if setpriority() is available. */
 #undef HAVE_SETPRIORITY
+
+/* Define if xkbcommon is available */
+#undef HAVE_XKBCOMMON
 
 /* Define if xlocale.h header file exists. */
 #undef HAVE_XLOCALE_H

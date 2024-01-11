@@ -2,7 +2,6 @@
 // Name:        src/osx/cocoa/stattext.mm
 // Purpose:     wxStaticText
 // Author:      Stefan Csomor
-// Modified by:
 // Created:     04/01/98
 // Copyright:   (c) Stefan Csomor
 // Licence:     wxWindows licence
@@ -157,7 +156,7 @@ wxWidgetImplType* wxWidgetImpl::CreateStaticText( wxWindowMac* wxpeer,
     [v setBezeled:NO];
     [v setBordered:NO];
 
-    NSLineBreakMode linebreak = NSLineBreakByClipping;
+    NSLineBreakMode linebreak = NSLineBreakByWordWrapping;
     if ( style & wxST_ELLIPSIZE_MASK )
     {
         if ( style & wxST_ELLIPSIZE_MIDDLE )

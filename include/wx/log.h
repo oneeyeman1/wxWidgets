@@ -2,7 +2,6 @@
 // Name:        wx/log.h
 // Purpose:     Assorted wxLogXXX functions, and wxLog (sink for logs)
 // Author:      Vadim Zeitlin
-// Modified by:
 // Created:     29/01/98
 // Copyright:   (c) 1998 Vadim Zeitlin <zeitlin@dptmaths.ens-cachan.fr>
 // Licence:     wxWindows licence
@@ -27,6 +26,13 @@ typedef unsigned long wxLogLevel;
 
 #include "wx/string.h"
 
+// This is a hack, but this header used to include wx/hashmap.h which, in turn,
+// included wx/wxcrt.h and it turns out quite some existing code relied on it
+// by using the CRT wrapper functions declared there without explicitly
+// including that header, so keep including it from here to let it continue to
+// compile.
+#include "wx/wxcrt.h"
+
 // ----------------------------------------------------------------------------
 // forward declarations
 // ----------------------------------------------------------------------------
@@ -44,13 +50,14 @@ class WXDLLIMPEXP_FWD_BASE wxObject;
 #include <time.h>   // for time_t
 
 #include "wx/dynarray.h"
-#include "wx/hashmap.h"
 #include "wx/msgout.h"
 #include "wx/time.h"
 
 #if wxUSE_THREADS
     #include "wx/thread.h"
 #endif // wxUSE_THREADS
+
+#include <unordered_map>
 
 // wxUSE_LOG_DEBUG enables the debug log messages
 #ifndef wxUSE_LOG_DEBUG
@@ -236,7 +243,7 @@ public:
         if ( !m_data )
             return false;
 
-        const wxStringToNumHashMap::const_iterator it = m_data->numValues.find(key);
+        const auto it = m_data->numValues.find(key);
         if ( it == m_data->numValues.end() )
             return false;
 
@@ -250,7 +257,7 @@ public:
         if ( !m_data )
             return false;
 
-        const wxStringToStringHashMap::const_iterator it = m_data->strValues.find(key);
+        const auto it = m_data->strValues.find(key);
         if ( it == m_data->strValues.end() )
             return false;
 
@@ -272,8 +279,8 @@ private:
     // sink (e.g. wxLogSysError() uses this to pass the error code)
     struct ExtraData
     {
-        wxStringToNumHashMap numValues;
-        wxStringToStringHashMap strValues;
+        std::unordered_map<wxString, wxUIntPtr> numValues;
+        std::unordered_map<wxString, wxString> strValues;
     };
 
     // nullptr if not used
@@ -310,10 +317,10 @@ class WXDLLIMPEXP_BASE wxLogFormatter
 {
 public:
     // Default constructor.
-    wxLogFormatter() { }
+    wxLogFormatter() = default;
 
     // Trivial but virtual destructor for the base class.
-    virtual ~wxLogFormatter() { }
+    virtual ~wxLogFormatter() = default;
 
 
     // Override this method to implement custom formatting of the given log
@@ -334,6 +341,19 @@ protected:
 #endif // WXWIN_COMPATIBILITY_3_0
 };
 
+// Special kind of trivial formatter which simply uses the message unchanged.
+class wxLogFormatterNone : public wxLogFormatter
+{
+public:
+    wxLogFormatterNone() = default;
+
+    virtual wxString Format(wxLogLevel WXUNUSED(level),
+                            const wxString& msg,
+                            const wxLogRecordInfo& WXUNUSED(info)) const override
+    {
+        return msg;
+    }
+};
 
 // ----------------------------------------------------------------------------
 // derive from this class to redirect (or suppress, or ...) log messages
@@ -653,10 +673,14 @@ private:
 class WXDLLIMPEXP_BASE wxLogBuffer : public wxLog
 {
 public:
-    wxLogBuffer() { }
+    wxLogBuffer() = default;
 
     // get the string contents with all messages logged
     const wxString& GetBuffer() const { return m_str; }
+
+    // clear all the messages, this, in particular, prevents them from being
+    // flushed
+    void Clear() { m_str.clear(); }
 
     // show the buffer contents to the user in the best possible way (this uses
     // wxMessageOutputMessageBox) and clear it
@@ -696,7 +720,7 @@ class WXDLLIMPEXP_BASE wxLogStream : public wxLog,
 {
 public:
     // redirect log output to an ostream
-    wxLogStream(wxSTD ostream *ostr = (wxSTD ostream *) nullptr,
+    wxLogStream(std::ostream *ostr = (std::ostream *) nullptr,
                 const wxMBConv& conv = wxConvWhateverWorks);
 
 protected:
@@ -704,7 +728,7 @@ protected:
     virtual void DoLogText(const wxString& msg) override;
 
     // using ptr here to avoid including <iostream.h> from this file
-    wxSTD ostream *m_ostr;
+    std::ostream *m_ostr;
 
     wxDECLARE_NO_COPY_CLASS(wxLogStream);
 };
@@ -739,6 +763,41 @@ public:
 
 private:
     bool m_flagOld; // the previous value of the wxLog::ms_doLog
+};
+
+// ----------------------------------------------------------------------------
+// Collect all logged messages into a (multiline) string.
+// ----------------------------------------------------------------------------
+
+// This class is supposed to be used as a local variable and collects, without
+// showing them, all the messages logged during its lifetime.
+class wxLogCollector
+{
+public:
+    wxLogCollector()
+        : m_logOrig{wxLog::SetActiveTarget(&m_logBuf)}
+    {
+        delete m_logBuf.SetFormatter(new wxLogFormatterNone{});
+    }
+
+    ~wxLogCollector()
+    {
+        // Don't flush the messages in the buffer.
+        m_logBuf.Clear();
+
+        wxLog::SetActiveTarget(m_logOrig);
+    }
+
+    const wxString& GetMessages() const
+    {
+        return m_logBuf.GetBuffer();
+    }
+
+private:
+    wxLogBuffer m_logBuf;
+    wxLog* const m_logOrig;
+
+    wxDECLARE_NO_COPY_CLASS(wxLogCollector);
 };
 
 // ----------------------------------------------------------------------------
@@ -1218,7 +1277,7 @@ wxDEFINE_EMPTY_LOG_FUNCTION2(Generic, wxLogLevel);
 class WXDLLIMPEXP_BASE wxLogNull
 {
 public:
-    wxLogNull() { }
+    wxLogNull() = default;
 };
 
 // Dummy macros to replace some functions.

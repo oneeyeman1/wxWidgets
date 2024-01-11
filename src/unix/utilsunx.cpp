@@ -38,14 +38,12 @@
     #include "wx/wxcrtvararg.h"
     #if USE_PUTENV
         #include "wx/module.h"
-        #include "wx/hashmap.h"
     #endif
 #endif
 
 #include "wx/apptrait.h"
 
 #include "wx/process.h"
-#include "wx/scopedptr.h"
 #include "wx/thread.h"
 
 #include "wx/cmdline.h"
@@ -62,6 +60,10 @@
 #include "wx/evtloop.h"
 #include "wx/mstream.h"
 #include "wx/private/fdioeventloopsourcehandler.h"
+#include "wx/config.h"
+#include "wx/filename.h"
+
+#include <memory>
 
 #include <pwd.h>
 #include <sys/wait.h>       // waitpid()
@@ -546,12 +548,12 @@ int BlockUntilChildExit(wxExecuteData& execData)
 
     // Do register all the FDs we want to monitor here: first, the one used to
     // handle the signals asynchronously.
-    wxScopedPtr<wxFDIOHandler>
+    std::unique_ptr<wxFDIOHandler>
         signalHandler(wxTheApp->RegisterSignalWakeUpPipe(dispatcher));
 
 #if wxUSE_STREAMS
     // And then the two for the child output and error streams if necessary.
-    wxScopedPtr<wxFDIOHandler>
+    std::unique_ptr<wxFDIOHandler>
         stdoutHandler,
         stderrHandler;
     if ( execData.IsRedirected() )
@@ -622,7 +624,7 @@ long wxExecute(const char* const* argv, int flags, wxProcess* process,
 #endif // __DARWIN__
 
     // this struct contains all information which we use for housekeeping
-    wxScopedPtr<wxExecuteData> execDataPtr(new wxExecuteData);
+    std::unique_ptr<wxExecuteData> execDataPtr(new wxExecuteData);
     wxExecuteData& execData = *execDataPtr;
 
     execData.m_flags = flags;
@@ -1140,6 +1142,27 @@ wxString wxGetNativeCpuArchitectureName()
 #ifdef __LINUX__
 
 static bool
+wxGetValuesFromOSRelease(const wxString& filename, wxLinuxDistributionInfo& ret)
+{
+#if wxUSE_CONFIG
+    if ( !wxFileName::Exists(filename) )
+    {
+        return false;
+    }
+
+    wxFileConfig fc(wxEmptyString, wxEmptyString, wxEmptyString, filename);
+    ret.Id = fc.Read(wxS("ID"), wxEmptyString).Capitalize();
+    ret.Description = fc.Read(wxS("PRETTY_NAME"), wxEmptyString);
+    ret.Release = fc.Read(wxS("VERSION_ID"), wxEmptyString);
+    ret.CodeName = fc.Read(wxS("VERSION_CODENAME"), wxEmptyString);
+
+    return true;
+#else
+    return false;
+#endif
+}
+
+static bool
 wxGetValueFromLSBRelease(const wxString& arg, const wxString& lhs, wxString* rhs)
 {
     // lsb_release seems to just read a global file which is always in UTF-8
@@ -1152,6 +1175,17 @@ wxGetValueFromLSBRelease(const wxString& arg, const wxString& lhs, wxString* rhs
 wxLinuxDistributionInfo wxGetLinuxDistributionInfo()
 {
     wxLinuxDistributionInfo ret;
+
+    // Read /etc/os-release and fall back to /usr/lib/os-release per below
+    // https://www.freedesktop.org/software/systemd/man/os-release.html
+    if ( wxGetValuesFromOSRelease(wxS("/etc/os-release"), ret) )
+    {
+        return ret;
+    }
+    if ( wxGetValuesFromOSRelease(wxS("/usr/lib/os-release"), ret) )
+    {
+        return ret;
+    }
 
     if ( !wxGetValueFromLSBRelease(wxS("--id"), wxS("Distributor ID:\t"),
                                    &ret.Id) )
@@ -1364,9 +1398,9 @@ bool wxGetDiskSpace(const wxString& path, wxDiskspaceSize_t *pTotal, wxDiskspace
 
 #if USE_PUTENV
 
-WX_DECLARE_STRING_HASH_MAP(char *, wxEnvVars);
+#include <unordered_map>
 
-static wxEnvVars gs_envVars;
+static std::unordered_map<wxString, char*> gs_envVars;
 
 class wxSetEnvModule : public wxModule
 {
@@ -1374,7 +1408,7 @@ public:
     virtual bool OnInit() { return true; }
     virtual void OnExit()
     {
-        for ( wxEnvVars::const_iterator i = gs_envVars.begin();
+        for ( auto i = gs_envVars.begin();
               i != gs_envVars.end();
               ++i )
         {
@@ -1470,7 +1504,7 @@ bool wxUnsetEnv(const wxString& variable)
 #include <signal.h>
 
 extern "C" {
-static void wxFatalSignalHandler(wxTYPE_SA_HANDLER)
+static void wxFatalSignalHandler(int WXUNUSED(signal))
 {
     if ( wxTheApp )
     {
@@ -1570,7 +1604,7 @@ wxAppTraits::RunLoopUntilChildExit(wxExecuteData& execData,
 
 #if wxUSE_STREAMS
     // Monitor the child streams if necessary.
-    wxScopedPtr<wxEventLoopSourceHandler>
+    std::unique_ptr<wxEventLoopSourceHandler>
         stdoutHandler,
         stderrHandler;
     if ( execData.IsRedirected() )
@@ -1675,11 +1709,9 @@ void wxExecuteData::OnSomeChildExited(int WXUNUSED(sig))
     // Make a copy of the list before iterating over it to avoid problems due
     // to deleting entries from it in the process.
     const ChildProcessesData allChildProcesses = ms_childProcesses;
-    for ( ChildProcessesData::const_iterator it = allChildProcesses.begin();
-          it != allChildProcesses.end();
-          ++it )
+    for ( const auto& kv : allChildProcesses )
     {
-        const int pid = it->first;
+        const int pid = kv.first;
 
         // Check whether this child exited.
         int exitcode;
@@ -1689,7 +1721,7 @@ void wxExecuteData::OnSomeChildExited(int WXUNUSED(sig))
         // And handle its termination if it did.
         //
         // Notice that this will implicitly remove it from ms_childProcesses.
-        it->second->OnExit(exitcode);
+        kv.second->OnExit(exitcode);
     }
 }
 

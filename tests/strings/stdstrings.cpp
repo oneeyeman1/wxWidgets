@@ -54,9 +54,13 @@ TEST_CASE("StdString::Iterators", "[stdstring]")
 {
     // test compilation of default iterators ctors:
     wxString::iterator i1;
+    wxUnusedVar(i1);
     wxString::const_iterator i2;
+    wxUnusedVar(i2);
     wxString::reverse_iterator i3;
+    wxUnusedVar(i3);
     wxString::const_reverse_iterator i4;
+    wxUnusedVar(i4);
 }
 
 TEST_CASE("StdString::IteratorsCmp", "[stdstring]")
@@ -614,30 +618,31 @@ TEST_CASE("StdString::Conversion", "[stdstring]")
 
     wxString s4("hello");
 
-    // notice that implicit wxString -> std::string conversion is only
-    // available in wxUSE_STL case, because it conflicts with conversion to
-    // const char*/wchar_t*
-#if wxUSE_STL && wxUSE_UNSAFE_WXSTRING_CONV
+#if wxUSE_STD_STRING_CONV_IN_WXSTRING && !defined(wxNO_UNSAFE_WXSTRING_CONV)
     std::string s5 = s4;
 #else
     std::string s5 = s4.ToStdString();
 #endif
     CHECK( s5 == "hello" );
 
-#if wxUSE_STL
+#if wxUSE_STD_STRING_CONV_IN_WXSTRING
     std::wstring s6 = s4;
 #else
     std::wstring s6 = s4.ToStdWstring();
 #endif
     CHECK( s6 == L"hello" );
 
-#if wxUSE_UNSAFE_WXSTRING_CONV
+    CHECK( s4.wc_string() == L"hello" );
+
+#if wxUSE_STD_STRING_CONV_IN_WXSTRING
+#if !defined(wxNO_UNSAFE_WXSTRING_CONV)
     std::string s7(s4);
     CHECK( s7 == "hello" );
 #endif
 
     std::wstring s8(s4);
     CHECK( s8 == L"hello" );
+#endif // wxUSE_STD_STRING_CONV_IN_WXSTRING
 
     std::string s9("\xF0\x9F\x90\xB1\0\xE7\x8C\xAB", 9); /* U+1F431 U+0000 U+732B */
     wxString s10 = wxString::FromUTF8(s9);
@@ -656,3 +661,47 @@ TEST_CASE("StdString::Algo", "[stdstring]")
     std::reverse(s.begin(), s.end());
     CHECK( s == "BA" );
 }
+
+#ifdef wxHAS_STD_STRING_VIEW
+TEST_CASE("StdString::View", "[stdstring]")
+{
+    std::string strStd("std::string value");
+    std::wstring strStdWide(L"std::wstring value");
+
+    std::string_view strStdView(strStd);
+    std::wstring_view strStdWideView(strStdWide);
+
+    wxString s1(strStdView);
+    CHECK( s1 == "std::string value" );
+
+    wxString s2(strStdWideView);
+    CHECK( s2 == "std::wstring value" );
+
+    wxString s3;
+    s3 = strStdView;
+    CHECK( s3 == "std::string value" );
+    s3 = strStdWideView;
+    CHECK( s3 == "std::wstring value" );
+
+    std::string strUTF("\xF0\x9F\x90\xB1\0\xE7\x8C\xAB", 9); /* U+1F431 U+0000 U+732B */
+    std::string_view strViewUTF(strUTF);
+
+    wxString wxstrUTF = wxString::FromUTF8(strViewUTF);
+    CHECK( wxstrUTF.ToStdString(wxConvUTF8) == strUTF );
+    CHECK( wxstrUTF.utf8_string() == strUTF );
+
+    std::string strInvalidUTF("xyz\0\xFF", 5); /* an invalid UTF-8 sequence */
+    std::string_view strViewInvalidUTF(strInvalidUTF);
+
+    CHECK( "" == wxString::FromUTF8(strViewInvalidUTF) );
+
+    /* Ensure we don't clobber comparisons on base types */
+    std::string_view view = "abc";
+    const char *str = "abc";
+    CHECK( view == str );
+
+    std::wstring_view wview = L"abc";
+    const wchar_t *wstr = L"abc";
+    CHECK( wview == wstr );
+}
+#endif // wxHAS_STD_STRING_VIEW

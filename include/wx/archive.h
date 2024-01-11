@@ -23,7 +23,7 @@
 class WXDLLIMPEXP_BASE wxArchiveNotifier
 {
 public:
-    virtual ~wxArchiveNotifier() { }
+    virtual ~wxArchiveNotifier() = default;
 
     virtual void OnEntryUpdated(class wxArchiveEntry& entry) = 0;
 };
@@ -37,7 +37,7 @@ public:
 class WXDLLIMPEXP_BASE wxArchiveEntry : public wxObject
 {
 public:
-    virtual ~wxArchiveEntry() { }
+    virtual ~wxArchiveEntry() = default;
 
     virtual wxDateTime   GetDateTime() const = 0;
     virtual wxFileOffset GetSize() const = 0;
@@ -92,7 +92,7 @@ class WXDLLIMPEXP_BASE wxArchiveInputStream : public wxFilterInputStream
 public:
     typedef wxArchiveEntry entry_type;
 
-    virtual ~wxArchiveInputStream() { }
+    virtual ~wxArchiveInputStream() = default;
 
     virtual bool OpenEntry(wxArchiveEntry& entry) = 0;
     virtual bool CloseEntry() = 0;
@@ -129,7 +129,7 @@ private:
 class WXDLLIMPEXP_BASE wxArchiveOutputStream : public wxFilterOutputStream
 {
 public:
-    virtual ~wxArchiveOutputStream() { }
+    virtual ~wxArchiveOutputStream() = default;
 
     virtual bool PutNextEntry(wxArchiveEntry *entry) = 0;
 
@@ -164,7 +164,6 @@ private:
 // An input iterator that can be used to transfer an archive's catalog to
 // a container.
 
-#if wxUSE_STL || defined WX_TEST_ARCHIVE_ITERATOR
 #include <iterator>
 #include <utility>
 
@@ -296,8 +295,6 @@ typedef wxArchiveIterator<wxArchiveInputStream> wxArchiveIter;
 typedef wxArchiveIterator<wxArchiveInputStream,
         std::pair<wxString, wxArchiveEntry*> >  wxArchivePairIter;
 
-#endif // wxUSE_STL || defined WX_TEST_ARCHIVE_ITERATOR
-
 
 /////////////////////////////////////////////////////////////////////////////
 // wxArchiveClassFactory
@@ -314,12 +311,10 @@ public:
     typedef wxArchiveInputStream  instream_type;
     typedef wxArchiveOutputStream outstream_type;
     typedef wxArchiveNotifier     notifier_type;
-#if wxUSE_STL || defined WX_TEST_ARCHIVE_ITERATOR
     typedef wxArchiveIter         iter_type;
     typedef wxArchivePairIter     pairiter_type;
-#endif
 
-    virtual ~wxArchiveClassFactory() { }
+    virtual ~wxArchiveClassFactory() = default;
 
     wxArchiveEntry *NewEntry() const
         { return DoNewEntry(); }

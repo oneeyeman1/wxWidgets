@@ -2,7 +2,6 @@
 // Name:        wx/cshelp.h
 // Purpose:     Context-sensitive help support classes
 // Author:      Julian Smart, Vadim Zeitlin
-// Modified by:
 // Created:     08/09/2000
 // Copyright:   (c) 2000 Julian Smart, Vadim Zeitlin
 // Licence:     wxWindows licence
@@ -17,12 +16,13 @@
 
 #include "wx/help.h"
 
-#include "wx/hashmap.h"
 #if wxUSE_BMPBUTTON
 #include "wx/bmpbuttn.h"
 #endif
 
 #include "wx/event.h"
+
+#include <unordered_map>
 
 // ----------------------------------------------------------------------------
 // classes used to implement context help UI
@@ -67,7 +67,7 @@ private:
 class WXDLLIMPEXP_CORE wxContextHelpButton : public wxBitmapButton
 {
 public:
-    wxContextHelpButton() {}
+    wxContextHelpButton() = default;
 
     wxContextHelpButton(wxWindow* parent,
                         wxWindowID id = wxID_CONTEXT_HELP,
@@ -194,9 +194,6 @@ private:
     static wxHelpProvider *ms_helpProvider;
 };
 
-WX_DECLARE_EXPORTED_HASH_MAP( wxUIntPtr, wxString, wxIntegerHash,
-                              wxIntegerEqual, wxSimpleHelpProviderHashMap );
-
 // wxSimpleHelpProvider is an implementation of wxHelpProvider which supports
 // only plain text help strings and shows the string associated with the
 // control (if any) in a tooltip
@@ -213,11 +210,11 @@ public:
     virtual void AddHelp(wxWindowID id, const wxString& text) override;
     virtual void RemoveHelp(wxWindowBase* window) override;
 
-protected:
+private:
     // we use 2 hashes for storing the help strings associated with windows
     // and the ids
-    wxSimpleHelpProviderHashMap m_hashWindows,
-                                m_hashIds;
+    std::unordered_map<const wxWindowBase*, wxString> m_hashWindows;
+    std::unordered_map<wxWindowID, wxString> m_hashIds;
 };
 
 // wxHelpControllerHelpProvider is an implementation of wxHelpProvider which supports

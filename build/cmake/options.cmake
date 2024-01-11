@@ -43,17 +43,18 @@ if(MSVC)
     mark_as_advanced(wxBUILD_MSVC_MULTIPROC)
 endif()
 
-if(NOT MSVC OR MSVC_VERSION GREATER 1800)
-    # support setting the C++ standard, present it an option to the user
-    if(DEFINED CMAKE_CXX_STANDARD)
-        set(wxCXX_STANDARD_DEFAULT ${CMAKE_CXX_STANDARD})
-    elseif(APPLE)
-        set(wxCXX_STANDARD_DEFAULT 11)
-    else()
-        set(wxCXX_STANDARD_DEFAULT COMPILER_DEFAULT)
-    endif()
-    wx_option(wxBUILD_CXX_STANDARD "C++ standard used to build wxWidgets targets"
-              ${wxCXX_STANDARD_DEFAULT} STRINGS COMPILER_DEFAULT 11 14 17 20)
+# support setting the C++ standard, present it an option to the user
+if(DEFINED CMAKE_CXX_STANDARD)
+    set(wxCXX_STANDARD_DEFAULT ${CMAKE_CXX_STANDARD})
+else()
+    set(wxCXX_STANDARD_DEFAULT COMPILER_DEFAULT)
+endif()
+wx_option(wxBUILD_CXX_STANDARD "C++ standard used to build wxWidgets targets"
+          ${wxCXX_STANDARD_DEFAULT} STRINGS COMPILER_DEFAULT 11 14 17 20)
+
+if(UNIX)
+    wx_option(wxBUILD_LARGEFILE_SUPPORT "support for large files")
+    mark_as_advanced(wxBUILD_LARGEFILE_SUPPORT)
 endif()
 
 if(WIN32)
@@ -77,18 +78,15 @@ wx_option(wxUSE_NO_RTTI "disable RTTI support" OFF)
 
 # STL options
 wx_option(wxUSE_STD_IOSTREAM "use standard C++ streams" ON)
-wx_option(wxUSE_STL "use standard C++ classes for everything" OFF)
-set(wxTHIRD_PARTY_LIBRARIES ${wxTHIRD_PARTY_LIBRARIES} wxUSE_STL "use C++ STL classes")
-wx_dependent_option(wxUSE_STD_CONTAINERS "use standard C++ container classes" ON "wxUSE_STL" OFF)
+wx_option(wxUSE_STD_CONTAINERS "use standard C++ container classes" ON)
 
-if(NOT WIN32)
-    wx_option(wxUSE_UNICODE_UTF8 "use UTF-8 representation for strings (Unix only)" OFF)
-    wx_dependent_option(wxUSE_UTF8_LOCALE_ONLY "only support UTF-8 locales in UTF-8 build (Unix only)" ON "wxUSE_UNICODE_UTF8" OFF)
-endif()
+wx_option(wxUSE_UNICODE_UTF8 "use UTF-8 representation for strings" OFF)
+wx_dependent_option(wxUSE_UTF8_LOCALE_ONLY "only support UTF-8 locales in UTF-8 build" ON "wxUSE_UNICODE_UTF8" OFF)
 
 if(NOT WIN32)
     wx_option(wxUSE_VISIBILITY "use of ELF symbols visibility")
 endif()
+wx_option(wxUSE_STD_STRING_CONV_IN_WXSTRING "provide implicit conversions to std::wstring and std::string in wxString" OFF)
 wx_option(wxUSE_UNSAFE_WXSTRING_CONV "provide unsafe implicit conversions in wxString to const char* or std::string")
 wx_option(wxUSE_REPRODUCIBLE_BUILD "enable reproducable build" OFF)
 
@@ -460,13 +458,12 @@ wx_option(wxUSE_ICO_CUR "use Windows ICO and CUR formats")
 # ---------------------------------------------------------------------------
 
 if(WIN32)
-    if(MSVC_VERSION GREATER 1600 AND NOT CMAKE_VS_PLATFORM_TOOLSET MATCHES "_xp$")
+    if(MSVC)
         set(wxUSE_WINRT_DEFAULT ON)
     else()
         set(wxUSE_WINRT_DEFAULT OFF)
     endif()
-    if(MSVC_VERSION GREATER 1800 AND NOT CMAKE_VS_PLATFORM_TOOLSET MATCHES "_xp$" AND
-        EXISTS "${wxSOURCE_DIR}/3rdparty/webview2")
+    if(EXISTS "${wxSOURCE_DIR}/3rdparty/webview2")
         set(wxUSE_WEBVIEW_EDGE_DEFAULT ON)
     else()
         set(wxUSE_WEBVIEW_EDGE_DEFAULT OFF)
@@ -482,7 +479,7 @@ if(WIN32)
     wx_option(wxUSE_POSTSCRIPT_ARCHITECTURE_IN_MSW "use PS printing in wxMSW (Win32 only)")
     wx_option(wxUSE_TASKBARICON_BALLOONS "enable wxTaskBarIcon::ShowBalloon() method (Win32 only)")
     wx_option(wxUSE_UXTHEME "enable support for Windows XP themed look (Win32 only)")
-    wx_option(wxUSE_WEBVIEW_EDGE "use wxWebView Edge (Chromium) backend (Windows 7+ only)" ${wxUSE_WEBVIEW_EDGE_DEFAULT})
+    wx_option(wxUSE_WEBVIEW_EDGE "use wxWebView Edge (Chromium) backend (Windows only)" ${wxUSE_WEBVIEW_EDGE_DEFAULT})
     wx_option(wxUSE_WEBVIEW_EDGE_STATIC "use wxWebView Edge with static loader" OFF)
     wx_option(wxUSE_WEBVIEW_IE "use wxWebView IE backend (Win32 only)")
     wx_option(wxUSE_WINRT "enable WinRT support" ${wxUSE_WINRT_DEFAULT})

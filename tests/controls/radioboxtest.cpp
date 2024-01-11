@@ -16,8 +16,9 @@
     #include "wx/radiobox.h"
 #endif // WX_PRECOMP
 
-#include "wx/scopedptr.h"
 #include "wx/tooltip.h"
+
+#include <memory>
 
 class RadioBoxTestCase
 {
@@ -144,7 +145,7 @@ TEST_CASE_METHOD(RadioBoxTestCase, "RadioBox::HelpText", "[radiobox][help]")
 
 TEST_CASE_METHOD(RadioBoxTestCase, "RadioBox::ToolTip", "[radiobox][tooltip]")
 {
-#if defined (__WXMSW__) || defined(__WXGTK__)
+#if defined (__WXMSW__) || defined(__WXGTK__) || defined(__WXQT__)
     //GetItemToolTip returns null if there is no tooltip set
     CHECK(!m_radio->GetItemToolTip(0));
 
@@ -195,7 +196,7 @@ TEST_CASE_METHOD(RadioBoxTestCase, "RadioBox::SetString", "[radiobox]")
 
 TEST_CASE("RadioBox::NoItems", "[radiobox]")
 {
-    wxScopedPtr<wxRadioBox>
+    std::unique_ptr<wxRadioBox>
         radio(new wxRadioBox(wxTheApp->GetTopWindow(), wxID_ANY, "Empty",
                              wxDefaultPosition, wxDefaultSize,
                              0, nullptr,

@@ -20,10 +20,11 @@
 #include "wx/app.h"
 #include "wx/window.h"
 #include "wx/dcclient.h"
-#include "wx/scopedptr.h"
 
 #include "testfile.h"
-#include "waitforpaint.h"
+#include "waitfor.h"
+
+#include <memory>
 
 static const wxSize s_dcSize(260, 300);
 static const wxColour s_bgColour(*wxWHITE); // colour to draw outside clipping box
@@ -3978,9 +3979,9 @@ TEST_CASE("ClippingBoxTestCase::wxPaintDC", "[clip][dc][paintdc]")
 #if defined(__WXGTK__)
     // Under wxGTK we need to have two children (at least) because if there
     // is one child its paint area is set to fill the whole parent frame.
-    wxScopedPtr<wxWindow> w0(new wxWindow(wxTheApp->GetTopWindow(), wxID_ANY));
+    std::unique_ptr<wxWindow> w0(new wxWindow(wxTheApp->GetTopWindow(), wxID_ANY));
 #endif // wxGTK
-    wxScopedPtr<wxWindow> win(new wxWindow(wxTheApp->GetTopWindow(), wxID_ANY, wxPoint(0, 0)));
+    std::unique_ptr<wxWindow> win(new wxWindow(wxTheApp->GetTopWindow(), wxID_ANY, wxPoint(0, 0)));
     win->SetClientSize(s_dcSize);
 
     // Wait for the first paint event to be sure
@@ -4321,11 +4322,7 @@ TEST_CASE("ClippingBoxTestCase::wxPaintDC", "[clip][dc][paintdc]")
     testWin->Refresh();
     testWin->Update();
     // Wait for update to be done
-    wxStopWatch sw;
-    while( sw.Time() < 50 )
-    {
-         wxYield();
-    }
+    YieldForAWhile();
 
     CHECK(paintExecuted == true);
 }
@@ -4337,7 +4334,7 @@ TEST_CASE("ClippingBoxTestCase::wxPaintDC", "[clip][dc][paintdc]")
 
 // Helper functions
 
-static inline void FlushGC(wxScopedPtr<wxGraphicsContext>& gc)
+static inline void FlushGC(std::unique_ptr<wxGraphicsContext>& gc)
 {
     gc->Flush();
 #if defined(__WXMSW__) && wxUSE_GRAPHICS_DIRECT2D
@@ -4364,7 +4361,7 @@ static void CheckClipPos(wxGraphicsContext* gc,
                      x, y, width, height, posTolerance);
 }
 
-static void CheckClipBox(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap& bmp,
+static void CheckClipBox(std::unique_ptr<wxGraphicsContext>& gc, const wxBitmap& bmp,
                          int x, int y, int w, int h,
                          int xPh, int yPh, int wPh, int hPh)
 {
@@ -4381,7 +4378,7 @@ static void CheckClipBox(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap& bmp
     }
 }
 
-static void CheckClipShape(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxBitmap& bmpRef, int posTolerance)
+static void CheckClipShape(std::unique_ptr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxBitmap& bmpRef, int posTolerance)
 {
     // Update wxGraphicsContext contents.
     FlushGC(gc);
@@ -4407,7 +4404,7 @@ void ClearGC(wxGraphicsContext* gc)
 
 // Actual tests
 
-static void InitialState(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxPoint& parentDcOrigin)
+static void InitialState(std::unique_ptr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxPoint& parentDcOrigin)
 {
     // Initial clipping box should be the same as the entire GC surface.
     ClearGC(gc.get());
@@ -4415,7 +4412,7 @@ static void InitialState(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap& bmp
              0, 0, s_dcSize.GetWidth(), s_dcSize.GetHeight());
 }
 
-static void InitialStateWithTransformedGC(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxPoint& parentDcOrigin)
+static void InitialStateWithTransformedGC(std::unique_ptr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxPoint& parentDcOrigin)
 {
     // Initial clipping box with transformed GC.
     wxGraphicsMatrix m = gc->CreateMatrix();
@@ -4436,7 +4433,7 @@ static void InitialStateWithTransformedGC(wxScopedPtr<wxGraphicsContext>& gc, co
                  0, 0, s_dcSize.GetWidth(), s_dcSize.GetHeight());
 }
 
-static void OneRegion(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxPoint& parentDcOrigin)
+static void OneRegion(std::unique_ptr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxPoint& parentDcOrigin)
 {
     // Setting one clipping region inside DC area.
     const int x = 10;
@@ -4450,7 +4447,7 @@ static void OneRegion(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap& bmp, c
                  x + parentDcOrigin.x, y + parentDcOrigin.y, w, h);
 }
 
-static void OneLargeRegion(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxPoint& parentDcOrigin)
+static void OneLargeRegion(std::unique_ptr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxPoint& parentDcOrigin)
 {
     // Setting one clipping region larger then GC surface.
     // Final clipping box should be limited to the GC extents.
@@ -4461,7 +4458,7 @@ static void OneLargeRegion(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap& b
              0, 0, s_dcSize.GetWidth(), s_dcSize.GetHeight());
 }
 
-static void OneOuterRegion(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap& bmp)
+static void OneOuterRegion(std::unique_ptr<wxGraphicsContext>& gc, const wxBitmap& bmp)
 {
     // Setting one clipping region entirely outside GC surface.
     // Final clipping box should be empty.
@@ -4471,7 +4468,7 @@ static void OneOuterRegion(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap& b
              0, 0, 0, 0);
 }
 
-static void OneRegionNegDim(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxPoint& parentDcOrigin)
+static void OneRegionNegDim(std::unique_ptr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxPoint& parentDcOrigin)
 {
     // Setting one clipping region with negative sizes values.
     // Final clipping box should have standard positive size values.
@@ -4490,7 +4487,7 @@ static void OneRegionNegDim(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap& 
              r.GetLeft() + parentDcOrigin.x, r.GetTop() + parentDcOrigin.y, r.GetWidth(), r.GetHeight());
 }
 
-static void OneRegionAndReset(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxPoint& parentDcOrigin)
+static void OneRegionAndReset(std::unique_ptr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxPoint& parentDcOrigin)
 {
     // Setting one clipping region and next destroy it.
     // Final clipping box should be the same as GC surface.
@@ -4501,7 +4498,7 @@ static void OneRegionAndReset(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap
                   0, 0, s_dcSize.GetWidth(), s_dcSize.GetHeight());
 }
 
-static void OneRegionAndEmpty(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap& bmp)
+static void OneRegionAndEmpty(std::unique_ptr<wxGraphicsContext>& gc, const wxBitmap& bmp)
 {
     // Setting one clipping region and next an empty box.
     // Final clipping box should empty.
@@ -4512,7 +4509,7 @@ static void OneRegionAndEmpty(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap
                  0, 0, 0, 0);
 }
 
-static void OneRegionWithTransformedGC(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxPoint& parentDcOrigin)
+static void OneRegionWithTransformedGC(std::unique_ptr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxPoint& parentDcOrigin)
 {
     // Setting one clipping region inside GC area
     // with applied some transformations.
@@ -4546,7 +4543,7 @@ static void OneRegionWithTransformedGC(wxScopedPtr<wxGraphicsContext>& gc, const
                  wxRound(xd + parentDcOrigin.x), wxRound(yd + parentDcOrigin.y), wxRound(wd), wxRound(hd));
 }
 
-static void OneRegionWithRotatedGC(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxPoint& parentDcOrigin)
+static void OneRegionWithRotatedGC(std::unique_ptr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxPoint& parentDcOrigin)
 {
     // Setting one rectangular clipping region for rotated graphics context.
     const double rotAngle = wxDegToRad(1.0);
@@ -4570,7 +4567,7 @@ static void OneRegionWithRotatedGC(wxScopedPtr<wxGraphicsContext>& gc, const wxB
         memDC.Clear();
         memDC.SetDeviceOrigin(parentDcOrigin.x, parentDcOrigin.y);
         wxGraphicsRenderer* rend = gc->GetRenderer();
-        wxScopedPtr<wxGraphicsContext> gcRef(rend->CreateContext(memDC));
+        std::unique_ptr<wxGraphicsContext> gcRef(rend->CreateContext(memDC));
         gcRef->SetAntialiasMode(wxANTIALIAS_NONE);
         gcRef->DisableOffset();
         gcRef->SetBrush(wxBrush(s_bgColour, wxBRUSHSTYLE_SOLID));
@@ -4591,7 +4588,7 @@ static void OneRegionWithRotatedGC(wxScopedPtr<wxGraphicsContext>& gc, const wxB
     CheckClipShape(gc, bmp, bmpRef, 1);
 }
 
-static void TwoRegionsOverlapping(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxPoint& parentDcOrigin)
+static void TwoRegionsOverlapping(std::unique_ptr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxPoint& parentDcOrigin)
 {
     // Setting one clipping region and next another region (partially overlapping).
     // Final clipping box should be an intersection of these two boxes.
@@ -4607,7 +4604,7 @@ static void TwoRegionsOverlapping(wxScopedPtr<wxGraphicsContext>& gc, const wxBi
              r.GetLeft() + parentDcOrigin.x, r.GetTop() + parentDcOrigin.y, r.GetWidth(), r.GetHeight());
 }
 
-static void TwoRegionsOverlappingNegDim(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxPoint& parentDcOrigin)
+static void TwoRegionsOverlappingNegDim(std::unique_ptr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxPoint& parentDcOrigin)
 {
     // Setting one clipping region with negative size values
     // and next another region (partially overlapping).
@@ -4633,7 +4630,7 @@ static void TwoRegionsOverlappingNegDim(wxScopedPtr<wxGraphicsContext>& gc, cons
                  r.GetLeft() + parentDcOrigin.x, r.GetTop() + parentDcOrigin.y, r.GetWidth(), r.GetHeight());
 }
 
-static void TwoRegionsNonOverlapping(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap& bmp)
+static void TwoRegionsNonOverlapping(std::unique_ptr<wxGraphicsContext>& gc, const wxBitmap& bmp)
 {
     // Setting one clipping region and next another region (non-overlapping).
     // Final clipping box should be empty.
@@ -4648,7 +4645,7 @@ static void TwoRegionsNonOverlapping(wxScopedPtr<wxGraphicsContext>& gc, const w
                  0, 0, 0, 0);
 }
 
-static void TwoRegionsNonOverlappingNegDim(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap& bmp)
+static void TwoRegionsNonOverlappingNegDim(std::unique_ptr<wxGraphicsContext>& gc, const wxBitmap& bmp)
 {
     // Setting one clipping region with negative size values
     // and next another region (non-overlapping).
@@ -4673,7 +4670,7 @@ static void TwoRegionsNonOverlappingNegDim(wxScopedPtr<wxGraphicsContext>& gc, c
                  0, 0, 0, 0);
 }
 
-static void RegionsAndPushPopState(wxScopedPtr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxDC& parentDc)
+static void RegionsAndPushPopState(std::unique_ptr<wxGraphicsContext>& gc, const wxBitmap& bmp, const wxDC& parentDc)
 {
     // Setting muliple rectangular clipping regions
     // for transformed wxGC and store/restore them.
@@ -4745,7 +4742,7 @@ static void RegionsAndPushPopState(wxScopedPtr<wxGraphicsContext>& gc, const wxB
         memDC.SetLogicalOrigin(org.x, org.y);
 
         wxGraphicsRenderer* rend = gc->GetRenderer();
-        wxScopedPtr<wxGraphicsContext> gcRef(rend->CreateContext(memDC));
+        std::unique_ptr<wxGraphicsContext> gcRef(rend->CreateContext(memDC));
         gcRef->SetAntialiasMode(wxANTIALIAS_NONE);
         gcRef->DisableOffset();
 
@@ -4798,7 +4795,7 @@ TEST_CASE("ClippingBoxTestCaseGC::DefaultRenderer", "[clip][gc][default]")
     wxPoint dcOrigin = -dc.DeviceToLogical(0, 0);
     wxGraphicsRenderer* rend = wxGraphicsRenderer::GetDefaultRenderer();
     REQUIRE(rend);
-    wxScopedPtr<wxGraphicsContext> gc(rend->CreateContext(dc));
+    std::unique_ptr<wxGraphicsContext> gc(rend->CreateContext(dc));
     REQUIRE(gc.get());
     gc->SetAntialiasMode(wxANTIALIAS_NONE);
     gc->DisableOffset();
@@ -4903,7 +4900,7 @@ TEST_CASE("ClippingBoxTestCaseGC::GDI+Renderer", "[clip][gc][gdiplus]")
     wxPoint dcOrigin = -dc.DeviceToLogical(0, 0);
     wxGraphicsRenderer* rend = wxGraphicsRenderer::GetGDIPlusRenderer();
     REQUIRE(rend);
-    wxScopedPtr<wxGraphicsContext> gc(rend->CreateContext(dc));
+    std::unique_ptr<wxGraphicsContext> gc(rend->CreateContext(dc));
     REQUIRE(gc.get());
     gc->SetAntialiasMode(wxANTIALIAS_NONE);
     gc->DisableOffset();
@@ -5008,7 +5005,7 @@ TEST_CASE("ClippingBoxTestCaseGC::Direct2DRenderer", "[clip][gc][direct2d]")
     wxPoint dcOrigin = -dc.DeviceToLogical(0, 0);
     wxGraphicsRenderer* rend = wxGraphicsRenderer::GetDirect2DRenderer();
     REQUIRE(rend);
-    wxScopedPtr<wxGraphicsContext> gc(rend->CreateContext(dc));
+    std::unique_ptr<wxGraphicsContext> gc(rend->CreateContext(dc));
     REQUIRE(gc.get());
     gc->SetAntialiasMode(wxANTIALIAS_NONE);
     gc->DisableOffset();
@@ -5118,7 +5115,7 @@ TEST_CASE("ClippingBoxTestCaseGC::CairoRenderer", "[clip][gc][cairo]")
     wxPoint dcOrigin = -dc.DeviceToLogical(0, 0);
     wxGraphicsRenderer* rend = wxGraphicsRenderer::GetCairoRenderer();
     REQUIRE(rend);
-    wxScopedPtr<wxGraphicsContext> gc(rend->CreateContext(dc));
+    std::unique_ptr<wxGraphicsContext> gc(rend->CreateContext(dc));
     REQUIRE(gc.get());
     gc->SetAntialiasMode(wxANTIALIAS_NONE);
     gc->DisableOffset();
