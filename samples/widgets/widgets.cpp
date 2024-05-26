@@ -183,6 +183,10 @@ public:
     // real implementation of WidgetsPage method with the same name
     bool IsUsingLogWindow() const;
 
+    // connects handlers showing some interesting widget events to the given
+    // widget
+    void ConnectToWidgetEvents(wxWindow* w);
+
 private:
 #if USE_LOG
     wxLog* m_logTarget;
@@ -253,11 +257,6 @@ protected:
     WidgetsPage *CurrentPage();
 
 private:
-    void OnWidgetFocus(wxFocusEvent& event);
-    void OnWidgetContextMenu(wxContextMenuEvent& event);
-
-    void ConnectToWidgetEvents();
-
     // the panel containing everything
     wxPanel *m_panel;
 
@@ -428,6 +427,51 @@ bool WidgetsApp::IsUsingLogWindow() const
 #else // !USE_LOG
     return false;
 #endif // USE_LOG
+}
+
+namespace
+{
+
+void OnFocus(wxFocusEvent& event)
+{
+    // Don't show annoying message boxes when starting or closing the sample,
+    // only log these events in our own logger.
+    if ( wxGetApp().IsUsingLogWindow() )
+    {
+        wxWindow* win = (wxWindow*)event.GetEventObject();
+        wxLogMessage("Widget '%s' %s focus", win->GetClassInfo()->GetClassName(),
+                     event.GetEventType() == wxEVT_SET_FOCUS ? "got" : "lost");
+    }
+
+    event.Skip();
+}
+
+} // anonymous namespace
+
+void WidgetsApp::ConnectToWidgetEvents(wxWindow* w)
+{
+    w->Bind(wxEVT_SET_FOCUS, OnFocus);
+    w->Bind(wxEVT_KILL_FOCUS, OnFocus);
+
+    w->Bind(wxEVT_ENTER_WINDOW, [w](wxMouseEvent& event)
+        {
+            wxLogMessage("Mouse entered into '%s'", w->GetClassInfo()->GetClassName());
+            event.Skip();
+        });
+    w->Bind(wxEVT_LEAVE_WINDOW, [w](wxMouseEvent& event)
+        {
+            wxLogMessage("Mouse left '%s'", w->GetClassInfo()->GetClassName());
+            event.Skip();
+        });
+
+    w->Bind(wxEVT_CONTEXT_MENU, [w](wxContextMenuEvent& event)
+        {
+            wxLogMessage("Context menu event for '%s' at %dx%d",
+                         w->GetClassInfo()->GetClassName(),
+                         event.GetPosition().x,
+                         event.GetPosition().y);
+            event.Skip();
+        });
 }
 
 // ----------------------------------------------------------------------------
@@ -727,24 +771,6 @@ WidgetsPage *WidgetsFrame::CurrentPage()
     return wxStaticCast(page, WidgetsPage);
 }
 
-void WidgetsFrame::ConnectToWidgetEvents()
-{
-    const Widgets& widgets = CurrentPage()->GetWidgets();
-
-    for ( Widgets::const_iterator it = widgets.begin();
-            it != widgets.end();
-            ++it )
-    {
-        wxWindow* const w = *it;
-        wxCHECK_RET(w, "null widget");
-
-        w->Bind(wxEVT_SET_FOCUS, &WidgetsFrame::OnWidgetFocus, this);
-        w->Bind(wxEVT_KILL_FOCUS, &WidgetsFrame::OnWidgetFocus, this);
-
-        w->Bind(wxEVT_CONTEXT_MENU, &WidgetsFrame::OnWidgetContextMenu, this);
-    }
-}
-
 WidgetsFrame::~WidgetsFrame()
 {
 #if USE_LOG
@@ -795,14 +821,36 @@ void WidgetsFrame::OnPageChanged(WidgetsBookCtrlEvent& event)
     // create the pages on demand, otherwise the sample startup is too slow as
     // it creates hundreds of controls
     WidgetsPage *curPage = CurrentPage();
-    if ( curPage->GetChildren().empty() )
+
+    bool hasChildren = false;
+    for ( const auto child : curPage->GetChildren() )
+    {
+        if ( !IsClientAreaChild(child) )
+        {
+            hasChildren = true;
+            break;
+        }
+    }
+
+    if ( !hasChildren )
     {
         wxWindowUpdateLocker noUpdates(curPage);
         curPage->CreateContent();
         curPage->SetScrollRate(10, 10);
         curPage->FitInside();
 
-        ConnectToWidgetEvents();
+        auto& app = wxGetApp();
+        for ( const auto w : CurrentPage()->GetWidgets() )
+        {
+            app.ConnectToWidgetEvents(w);
+        }
+
+        // From now on, we're interested in these notifications as we'll need
+        // to reconnect to the widget events if it's recreated (unfortunately
+        // we can't rely getting them on creation as some page don't generate
+        // them -- but neither can we rely on not getting them as some pages do
+        // generate them, hence the use of m_notifyRecreate flag).
+        curPage->EnableRecreationNotifications();
     }
 
     // re-apply the attributes to the widget(s)
@@ -971,11 +1019,6 @@ void WidgetsFrame::OnSetBorder(wxCommandEvent& event)
     WidgetsPage *page = CurrentPage();
 
     page->RecreateWidget();
-
-    ConnectToWidgetEvents();
-
-    // re-apply the attributes to the widget(s)
-    page->SetUpWidget();
 }
 
 void WidgetsFrame::OnSetVariant(wxCommandEvent& event)
@@ -1259,31 +1302,6 @@ void WidgetsFrame::OnSetHint(wxCommandEvent& WXUNUSED(event))
 
 #endif // wxUSE_MENUS
 
-void WidgetsFrame::OnWidgetFocus(wxFocusEvent& event)
-{
-    // Don't show annoying message boxes when starting or closing the sample,
-    // only log these events in our own logger.
-    if ( wxGetApp().IsUsingLogWindow() )
-    {
-        wxWindow* win = (wxWindow*)event.GetEventObject();
-        wxLogMessage("Widget '%s' %s focus", win->GetClassInfo()->GetClassName(),
-                     event.GetEventType() == wxEVT_SET_FOCUS ? "got" : "lost");
-    }
-
-    event.Skip();
-}
-
-void WidgetsFrame::OnWidgetContextMenu(wxContextMenuEvent& event)
-{
-    wxWindow* win = (wxWindow*)event.GetEventObject();
-    wxLogMessage("Context menu event for %s at %dx%d",
-                 win->GetClassInfo()->GetClassName(),
-                 event.GetPosition().x,
-                 event.GetPosition().y);
-
-    event.Skip();
-}
-
 // ----------------------------------------------------------------------------
 // WidgetsPageInfo
 // ----------------------------------------------------------------------------
@@ -1460,6 +1478,19 @@ wxCheckBox *WidgetsPage::CreateCheckBoxAndAddToSizer(wxSizer *sizer,
     sizer->AddSpacer(2);
 
     return checkbox;
+}
+
+void WidgetsPage::NotifyWidgetRecreation(wxWindow* widget)
+{
+    if ( !m_notifyRecreate )
+    {
+        // We're in the process of initialization, don't notify yet.
+        return;
+    }
+
+    SetUpWidget();
+
+    wxGetApp().ConnectToWidgetEvents(widget);
 }
 
 /* static */

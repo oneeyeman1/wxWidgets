@@ -135,7 +135,7 @@ DEFAULT_DEFAULT_wxUSE_QT=0
 
 PROGRAM_EXT=
 SAMPLES_CXXFLAGS=
-SAMPLES_RPATH_FLAG=
+DYLIB_RPATH_FLAG=
 DYLIB_RPATH_INSTALL=
 DYLIB_RPATH_POSTLINK=
 
@@ -531,7 +531,7 @@ WX_ARG_WITH(opengl,        [  --with-opengl           use OpenGL (or Mesa)], wxU
 WX_ARG_WITH(xtest,         [  --with-xtest            use XTest extension], wxUSE_XTEST)
 WX_ARG_WITH(nanosvg,       [  --with-nanosvg          use NanoSVG for rasterizing SVG], wxUSE_NANOSVG)
 
-if test "$wxUSE_GTK" = 1 -o "$wxUSE_QT" = 1 -o "$wxUSE_X11" = 1; then
+if test "$wxUSE_GTK" = 1 -o "$wxUSE_X11" = 1; then
     wx_needs_cairo_for_gc=1
 fi
 
@@ -3443,12 +3443,12 @@ if test "$wxUSE_SHARED" = "yes"; then
 
     dnl test for Sun CC which can be used under both Solaris and Linux
     if test "x$SUNCXX" = xyes; then
-        SAMPLES_RPATH_FLAG="-R\$(wx_top_builddir)/lib"
+        DYLIB_RPATH_FLAG="-R\$(wx_top_builddir)/lib"
         WXCONFIG_RPATH="-R\$libdir"
     else
     case "${host}" in
-      *-*-linux* | *-*-gnu* )
-        SAMPLES_RPATH_FLAG="-Wl,-rpath,\$(wx_top_builddir)/lib"
+      *-*-linux* | *-*-gnu* | *-*-freebsd*)
+        DYLIB_RPATH_FLAG="-Wl,-rpath,\$(wx_top_builddir)/lib"
         WXCONFIG_RPATH="-Wl,-rpath,\$libdir"
         ;;
 
@@ -3469,7 +3469,7 @@ if test "$wxUSE_SHARED" = "yes"; then
             [],[])],
             [
                 AC_MSG_RESULT([yes])
-                SAMPLES_RPATH_FLAG="-Wl,-rpath,\$(wx_top_builddir)/lib"
+                DYLIB_RPATH_FLAG="-Wl,-rpath,\$(wx_top_builddir)/lib"
                 WXCONFIG_RPATH="-Wl,-rpath,\$libdir"
             ],[
                 AC_MSG_RESULT([no])
@@ -3479,7 +3479,7 @@ if test "$wxUSE_SHARED" = "yes"; then
                     [],[])],
                     [
                         AC_MSG_RESULT([yes])
-                        SAMPLES_RPATH_FLAG="-Wl,-R,\$(wx_top_builddir)/lib"
+                        DYLIB_RPATH_FLAG="-Wl,-R,\$(wx_top_builddir)/lib"
                         WXCONFIG_RPATH="-Wl,-R,\$libdir"
                     ],[
                         AC_MSG_RESULT([no])
@@ -3500,6 +3500,10 @@ for dep in \${libnames} ; do
     changes="\${changes} -change \${4}/\${dep} \${3}/\${dep}"
 done
 for i in \${libnames} ; do
+    if test -L \${1}/\${i}; then
+        # skip symbolic links
+        continue
+    fi
     ${HOST_PREFIX}install_name_tool \${changes} -id \${3}/\${i} \${1}/\${i}
 done
 
@@ -3522,7 +3526,7 @@ EOF
         ;;
 
       *-*-hpux* )
-        SAMPLES_RPATH_FLAG="-Wl,+b,\$(wx_top_builddir)/lib"
+        DYLIB_RPATH_FLAG="-Wl,+b,\$(wx_top_builddir)/lib"
         WXCONFIG_RPATH="-Wl,+b,\$libdir"
         ;;
 
@@ -3530,7 +3534,7 @@ EOF
     fi
 
     if test $wxUSE_RPATH = "no"; then
-        SAMPLES_RPATH_FLAG=''
+        DYLIB_RPATH_FLAG=''
         DYLIB_PATH_POSTLINK=''
         WXCONFIG_RPATH=''
     fi
@@ -6155,10 +6159,6 @@ if test "$wxUSE_DRAG_AND_DROP" = "yes" -o "$wxUSE_CLIPBOARD" = "yes"; then
     SAMPLES_SUBDIRS="$SAMPLES_SUBDIRS dnd"
 fi
 
-if test "$wxUSE_CLIPBOARD" = "yes"; then
-    SAMPLES_SUBDIRS="$SAMPLES_SUBDIRS clipboard"
-fi
-
 if test "$wxUSE_SPLINES" = "yes" ; then
   AC_DEFINE(wxUSE_SPLINES)
 fi
@@ -7243,24 +7243,26 @@ if test "$wxUSE_GRAPHICS_CONTEXT" = "yes"; then
             wx_has_graphics=1
         fi
 
-        AC_CACHE_CHECK([if Direct2D is available], wx_cv_lib_direct2d,
-            [
-                dnl same as above, we need to test only for the headers
-                AC_LANG_PUSH(C++)
-                AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-                    [#include <windows.h>
-                     #include <d2d1.h>
-                     #include <dwrite.h>
-                    ],
-                    [
-                        ID2D1Factory* factory = NULL;
-                    ])],
-                    wx_cv_lib_direct2d=yes,
-                    wx_cv_lib_direct2d=no
-                )
-                AC_LANG_POP()
-            ]
-        )
+        if test "$wxUSE_GRAPHICS_DIRECT2D" = "yes"; then
+            AC_CACHE_CHECK([if Direct2D is available], wx_cv_lib_direct2d,
+                [
+                    dnl same as above, we need to test only for the headers
+                    AC_LANG_PUSH(C++)
+                    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+                        [#include <windows.h>
+                        #include <d2d1.h>
+                        #include <dwrite.h>
+                        ],
+                        [
+                            ID2D1Factory* factory = NULL;
+                        ])],
+                        wx_cv_lib_direct2d=yes,
+                        wx_cv_lib_direct2d=no
+                    )
+                    AC_LANG_POP()
+                ]
+            )
+        fi
         if test "$wx_cv_lib_direct2d" = "yes"; then
             AC_DEFINE(wxUSE_GRAPHICS_DIRECT2D)
         fi
@@ -7804,9 +7806,9 @@ AC_SUBST(DEBUG_FLAG)
 TOOLKIT_LOWERCASE=`echo $TOOLKIT | tr '[[A-Z]]' '[[a-z]]'`
 AC_SUBST(TOOLKIT_LOWERCASE)
 AC_SUBST(TOOLKIT_VERSION)
+AC_SUBST(DYLIB_RPATH_FLAG)
 AC_SUBST(DYLIB_RPATH_INSTALL)
 AC_SUBST(DYLIB_RPATH_POSTLINK)
-AC_SUBST(SAMPLES_RPATH_FLAG)
 AC_SUBST(HEADER_PAD_OPTION)
 AC_SUBST(HOST_SUFFIX)
 AC_SUBST(USE_DPI_AWARE_MANIFEST)

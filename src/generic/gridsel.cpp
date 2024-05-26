@@ -488,7 +488,7 @@ void wxGridSelection::UpdateRows( size_t pos, int numRows )
                         count--;
                     }
                     else
-                        block.SetBottomRow( pos );
+                        block.SetBottomRow( pos - 1 );
                 }
             }
         }
@@ -537,7 +537,7 @@ void wxGridSelection::UpdateCols( size_t pos, int numCols )
                         count--;
                     }
                     else
-                        block.SetRightCol(pos);
+                        block.SetRightCol( pos - 1 );
                 }
             }
         }
@@ -866,6 +866,10 @@ wxGridSelection::Select(const wxGridBlockCoords& block,
     {
         m_grid->RefreshBlock(block.GetTopLeft(), block.GetBottomRight());
     }
+
+#if wxUSE_ACCESSIBILITY
+    wxAccessible::NotifyEvent(wxACC_EVENT_OBJECT_SELECTIONWITHIN, m_grid, wxOBJID_CLIENT, wxACC_SELF);
+#endif // wxUSE_ACCESSIBILITY
 
     // Send Event, if not disabled.
     if ( eventType != wxEVT_NULL )

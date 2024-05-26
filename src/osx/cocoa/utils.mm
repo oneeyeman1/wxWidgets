@@ -277,6 +277,13 @@ void wxBell()
         wxTheApp->SetActive( false , nullptr ) ;
 }
 
+- (BOOL)applicationSupportsSecureRestorableState:(NSApplication *)app
+{
+    // Just avoid the warning about not returning true from here: as we don't
+    // customize state restoration anyhow, we can let the system do its thing.
+    return YES;
+}
+
 @end
 
 /*
@@ -460,6 +467,38 @@ void wxApp::OSXEnableAutomaticTabbing(bool enable)
         [NSWindow setAllowsAutomaticWindowTabbing:enable];
     }
 #endif // macOS 10.12+
+}
+
+wxApp::AppearanceResult wxApp::SetAppearance(Appearance appearance)
+{
+#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_14
+    if ( WX_IS_MACOS_AVAILABLE(10, 14) )
+    {
+        NSString* name = nil;
+        switch ( appearance )
+        {
+            case Appearance::System:
+                name = [[NSAppearance currentAppearance] name];
+                break;
+
+            case Appearance::Light:
+                name = NSAppearanceNameAqua;
+                break;
+
+            case Appearance::Dark:
+                name = NSAppearanceNameDarkAqua;
+                break;
+        }
+
+        [NSApp setAppearance:[NSAppearance appearanceNamed:name]];
+
+        return AppearanceResult::Success;
+    }
+#endif // macOS 10.14+
+
+    wxUnusedVar(appearance);
+
+    return AppearanceResult::Failure;
 }
 
 extern // used from src/osx/core/display.cpp

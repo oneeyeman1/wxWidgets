@@ -415,7 +415,6 @@ void SpinBtnWidgetsPage::CreateSpin()
     m_spinbtn = new wxSpinButton(this, SpinBtnPage_SpinBtn,
                                  wxDefaultPosition, wxDefaultSize,
                                  flags);
-
     m_spinbtn->SetValue(val);
     m_spinbtn->SetRange(m_min, m_max);
 
@@ -430,6 +429,10 @@ void SpinBtnWidgetsPage::CreateSpin()
                                          wxDefaultPosition, wxDefaultSize,
                                          flags | textFlags,
                                          m_min, m_max, val, 0.1);
+
+    NotifyWidgetRecreation(m_spinbtn);
+    NotifyWidgetRecreation(m_spinctrl);
+    NotifyWidgetRecreation(m_spinctrldbl);
 
     // Add spacers, labels and spin controls to the sizer.
     m_sizerSpin->Add(0, 0, 1);

@@ -721,13 +721,13 @@ bool wxXmlResource::UpdateResources()
 {
     bool rt = true;
 
+    // We never do it if this flag is specified.
+    if ( m_flags & wxXRC_NO_RELOADING )
+        return rt;
+
     for ( wxXmlResourceDataRecord& rec : Data() )
     {
         // Check if we need to reload this one.
-
-        // We never do it if this flag is specified.
-        if ( m_flags & wxXRC_NO_RELOADING )
-            continue;
 
         // And we don't do it for the records that were not loaded from a
         // file/URI (or at least not directly) in the first place.
@@ -2260,20 +2260,22 @@ bool wxXmlResourceHandlerImpl::IsObjectNode(const wxXmlNode *node) const
                     node->GetName() == wxS("object_ref"));
 }
 
-wxString wxXmlResourceHandlerImpl::GetNodeContent(const wxXmlNode *node)
+wxString wxXmlResourceHandlerImpl::GetNodeName(const wxXmlNode *node) const
 {
-    const wxXmlNode *n = node;
-    if (n == nullptr) return wxEmptyString;
-    n = n->GetChildren();
+    return node ? node->GetName() : wxString{};
+}
 
-    while (n)
-    {
-        if (n->GetType() == wxXML_TEXT_NODE ||
-            n->GetType() == wxXML_CDATA_SECTION_NODE)
-            return n->GetContent();
-        n = n->GetNext();
-    }
-    return wxEmptyString;
+wxString
+wxXmlResourceHandlerImpl::GetNodeAttribute(const wxXmlNode *node,
+                                           const wxString& attrName,
+                                           const wxString& defaultValue) const
+{
+    return node ? node->GetAttribute(attrName, defaultValue) : defaultValue;
+}
+
+wxString wxXmlResourceHandlerImpl::GetNodeContent(const wxXmlNode *node) const
+{
+    return node ? node->GetNodeContent() : wxString{};
 }
 
 wxXmlNode *wxXmlResourceHandlerImpl::GetNodeParent(const wxXmlNode *node) const

@@ -94,6 +94,13 @@ wxWindowDCImpl::~wxWindowDCImpl()
     // Painter will be deleted by base class if we own it
 }
 
+void wxWindowDCImpl::DoGetSize(int *width, int *height) const
+{
+    wxCHECK_RET( m_window, "wxWindowDCImpl without a window?" );
+
+    m_window->GetSize(width, height);
+}
+
 //##############################################################################
 
 wxIMPLEMENT_CLASS(wxClientDCImpl,wxWindowDCImpl);
@@ -113,6 +120,12 @@ wxClientDCImpl::wxClientDCImpl( wxDC *owner, wxWindow *win )
     }
 }
 
+void wxClientDCImpl::DoGetSize(int *width, int *height) const
+{
+    wxCHECK_RET( m_window, "wxClientDCImpl without a window?" );
+
+    m_window->GetClientSize(width, height);
+}
 
 //##############################################################################
 
@@ -126,7 +139,7 @@ wxPaintDCImpl::wxPaintDCImpl( wxDC *owner )
 wxPaintDCImpl::wxPaintDCImpl( wxDC *owner, wxWindow *win )
     : wxWindowDCImpl( owner, win )
 {
-    wxCHECK_RET( m_isWindowPainter,
+    wxCHECK_RET( m_isWindowPainter || win->QtCanPaintWithoutActivePainter(),
                  "wxPaintDC can't be created outside wxEVT_PAINT handler" );
 }
 

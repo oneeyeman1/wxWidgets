@@ -96,9 +96,10 @@
 // adjusted.
 #define IN_CELL_EXPANDER_BUTTON_X_ADJUST    2
 
-#if WXWIN_COMPATIBILITY_3_0
 namespace
 {
+
+#if WXWIN_COMPATIBILITY_3_0
 // Hash containing for every active wxPG the list of editors and their event handlers
 // to be deleted in the idle event handler.
 // It emulates member variable 'm_deletedEditorObjects' in 3.0 compatibility mode.
@@ -107,9 +108,24 @@ WX_DECLARE_HASH_MAP(wxPropertyGrid*, wxArrayPGObject*,
                     DeletedObjects);
 
 DeletedObjects gs_deletedEditorObjects;
+#endif
+
+// Bit values for wxPropertyGrid::m_coloursCustomized.
+enum CustomColour
+{
+    CustomColour_None           = 0x0000,
+    CustomColour_Margin         = 0x0001,
+    CustomColour_CaptionBg      = 0x0002,
+    CustomColour_CaptionText    = 0x0004,
+    CustomColour_CellBg         = 0x0008,
+    CustomColour_CellText       = 0x0010,
+    CustomColour_SelectionBg    = 0x0020,
+    CustomColour_SelectionText  = 0x0040,
+    CustomColour_Line           = 0x0080,
+    CustomColour_DisabledText   = 0x0100
+};
 
 } // anonymous namespace
-#endif
 
 // -----------------------------------------------------------------------
 
@@ -389,7 +405,7 @@ void wxPropertyGrid::Init1()
     AddActionTrigger(wxPGKeyboardAction::PressButton, WXK_DOWN, wxMOD_ALT);
     AddActionTrigger(wxPGKeyboardAction::PressButton, WXK_F4);
 
-    m_coloursCustomized = 0;
+    m_coloursCustomized = CustomColour_None;
 
     m_doubleBuffer = nullptr;
 
@@ -491,8 +507,6 @@ void wxPropertyGrid::Init2()
     // set virtual size to this window size
     wxSize clientSize = GetClientSize();
     SetVirtualSize(clientSize);
-
-    m_timeCreated = ::wxGetLocalTimeMillis();
 
     m_iFlags |= wxPG_FL_INITIALIZED;
 
@@ -1308,6 +1322,11 @@ void wxPropertyGrid::CalculateFontAndBitmapStuff( int vspacing )
 
 #endif
 
+#ifdef wxPG_ICON_WIDTH
+    // Icons are always square in this case.
+    m_iconHeight = m_iconWidth;
+#endif
+
     m_gutterWidth = m_iconWidth / wxPG_GUTTER_DIV;
     if ( m_gutterWidth < wxPG_GUTTER_MIN )
         m_gutterWidth = wxPG_GUTTER_MIN;
@@ -1417,7 +1436,7 @@ static int wxPGGetColAvg( const wxColour& col )
 
 void wxPropertyGrid::RegainColours()
 {
-    if ( !(m_coloursCustomized & 0x0002) )
+    if ( !(m_coloursCustomized & CustomColour_CaptionBg) )
     {
         wxColour col = wxSystemSettings::GetColour( wxSYS_COLOUR_BTNFACE );
 
@@ -1434,10 +1453,10 @@ void wxPropertyGrid::RegainColours()
         m_categoryDefaultCell.GetData()->SetBgCol(m_colCapBack);
     }
 
-    if ( !(m_coloursCustomized & 0x0001) )
+    if ( !(m_coloursCustomized & CustomColour_Margin) )
         m_colMargin = m_colCapBack;
 
-    if ( !(m_coloursCustomized & 0x0004) )
+    if ( !(m_coloursCustomized & CustomColour_CaptionText) )
     {
     #ifdef __WXGTK__
         int colDec = -90;
@@ -1452,7 +1471,7 @@ void wxPropertyGrid::RegainColours()
         m_categoryDefaultCell.GetData()->SetFgCol(capForeCol);
     }
 
-    if ( !(m_coloursCustomized & 0x0008) )
+    if ( !(m_coloursCustomized & CustomColour_CellBg) )
     {
         wxColour bgCol = wxSystemSettings::GetColour( wxSYS_COLOUR_WINDOW );
         m_colPropBack = bgCol;
@@ -1461,7 +1480,7 @@ void wxPropertyGrid::RegainColours()
             m_unspecifiedAppearance.SetBgCol(bgCol);
     }
 
-    if ( !(m_coloursCustomized & 0x0010) )
+    if ( !(m_coloursCustomized & CustomColour_CellText) )
     {
         wxColour fgCol = wxSystemSettings::GetColour( wxSYS_COLOUR_WINDOWTEXT );
         m_colPropFore = fgCol;
@@ -1470,17 +1489,17 @@ void wxPropertyGrid::RegainColours()
             m_unspecifiedAppearance.SetFgCol(fgCol);
     }
 
-    if ( !(m_coloursCustomized & 0x0020) )
+    if ( !(m_coloursCustomized & CustomColour_SelectionBg) )
         m_colSelBack = wxSystemSettings::GetColour( wxSYS_COLOUR_HIGHLIGHT );
 
-    if ( !(m_coloursCustomized & 0x0040) )
+    if ( !(m_coloursCustomized & CustomColour_SelectionText) )
         m_colSelFore = wxSystemSettings::GetColour( wxSYS_COLOUR_HIGHLIGHTTEXT );
 
-    if ( !(m_coloursCustomized & 0x0080) )
+    if ( !(m_coloursCustomized & CustomColour_Line) )
         m_colLine = m_colCapBack;
 
-    if ( !(m_coloursCustomized & 0x0100) )
-        m_colDisPropFore = m_colCapFore;
+    if ( !(m_coloursCustomized & CustomColour_DisabledText) )
+        m_colDisPropFore = wxSystemSettings::GetColour( wxSYS_COLOUR_GRAYTEXT );
 
     m_colEmptySpace = wxSystemSettings::GetColour( wxSYS_COLOUR_WINDOW );
 }
@@ -1489,7 +1508,7 @@ void wxPropertyGrid::RegainColours()
 
 void wxPropertyGrid::ResetColours()
 {
-    m_coloursCustomized = 0;
+    m_coloursCustomized = CustomColour_None;
 
     RegainColours();
 
@@ -1518,7 +1537,7 @@ bool wxPropertyGrid::SetFont( const wxFont& font )
 void wxPropertyGrid::SetLineColour( const wxColour& col )
 {
     m_colLine = col;
-    m_coloursCustomized |= 0x80;
+    m_coloursCustomized |= CustomColour_Line;
     Refresh();
 }
 
@@ -1527,7 +1546,7 @@ void wxPropertyGrid::SetLineColour( const wxColour& col )
 void wxPropertyGrid::SetMarginColour( const wxColour& col )
 {
     m_colMargin = col;
-    m_coloursCustomized |= 0x01;
+    m_coloursCustomized |= CustomColour_Margin;
     Refresh();
 }
 
@@ -1536,7 +1555,7 @@ void wxPropertyGrid::SetMarginColour( const wxColour& col )
 void wxPropertyGrid::SetCellBackgroundColour( const wxColour& col )
 {
     m_colPropBack = col;
-    m_coloursCustomized |= 0x08;
+    m_coloursCustomized |= CustomColour_CellBg;
 
     m_propertyDefaultCell.GetData()->SetBgCol(col);
     m_unspecifiedAppearance.SetBgCol(col);
@@ -1549,7 +1568,7 @@ void wxPropertyGrid::SetCellBackgroundColour( const wxColour& col )
 void wxPropertyGrid::SetCellTextColour( const wxColour& col )
 {
     m_colPropFore = col;
-    m_coloursCustomized |= 0x10;
+    m_coloursCustomized |= CustomColour_CellText;
 
     m_propertyDefaultCell.GetData()->SetFgCol(col);
     m_unspecifiedAppearance.SetFgCol(col);
@@ -1571,7 +1590,7 @@ void wxPropertyGrid::SetEmptySpaceColour( const wxColour& col )
 void wxPropertyGrid::SetCellDisabledTextColour( const wxColour& col )
 {
     m_colDisPropFore = col;
-    m_coloursCustomized |= 0x100;
+    m_coloursCustomized |= CustomColour_DisabledText;
     Refresh();
 }
 
@@ -1580,7 +1599,7 @@ void wxPropertyGrid::SetCellDisabledTextColour( const wxColour& col )
 void wxPropertyGrid::SetSelectionBackgroundColour( const wxColour& col )
 {
     m_colSelBack = col;
-    m_coloursCustomized |= 0x20;
+    m_coloursCustomized |= CustomColour_SelectionBg;
     Refresh();
 }
 
@@ -1589,7 +1608,7 @@ void wxPropertyGrid::SetSelectionBackgroundColour( const wxColour& col )
 void wxPropertyGrid::SetSelectionTextColour( const wxColour& col )
 {
     m_colSelFore = col;
-    m_coloursCustomized |= 0x40;
+    m_coloursCustomized |= CustomColour_SelectionText;
     Refresh();
 }
 
@@ -1598,7 +1617,7 @@ void wxPropertyGrid::SetSelectionTextColour( const wxColour& col )
 void wxPropertyGrid::SetCaptionBackgroundColour( const wxColour& col )
 {
     m_colCapBack = col;
-    m_coloursCustomized |= 0x02;
+    m_coloursCustomized |= CustomColour_CaptionBg;
 
     m_categoryDefaultCell.GetData()->SetBgCol(col);
 
@@ -1610,7 +1629,7 @@ void wxPropertyGrid::SetCaptionBackgroundColour( const wxColour& col )
 void wxPropertyGrid::SetCaptionTextColour( const wxColour& col )
 {
     m_colCapFore = col;
-    m_coloursCustomized |= 0x04;
+    m_coloursCustomized |= CustomColour_CaptionText;
 
     m_categoryDefaultCell.GetData()->SetFgCol(col);
 
@@ -5003,8 +5022,10 @@ bool wxPropertyGrid::HandleMouseMove( int x, unsigned int y,
 
     if ( m_dragStatus > 0 )
     {
-        if ( x > (m_marginWidth + wxPG_DRAG_MARGIN) &&
-             x < (m_pState->GetVirtualWidth() - wxPG_DRAG_MARGIN) )
+        const int dragMargin = FromDIP(wxPG_DRAG_MARGIN);
+
+        if ( x > (m_marginWidth + dragMargin) &&
+             x < (m_pState->GetVirtualWidth() - dragMargin) )
         {
 
             int splitterX = x - splitterHitOffset;
@@ -6416,9 +6437,22 @@ wxPGProperty* wxPropertyGridPopulator::Add( const wxString& propClass,
 
 void wxPropertyGridPopulator::AddChildren( wxPGProperty* property )
 {
+    // Preserve inherited attributes to be able to restore them later:
+    // attributes recursively set for the children of this property shouldn't
+    // be inherited by its siblings.
+    const auto inheritedAttributesOrig = m_inheritedAttributes;
+
+    // Apply inherited attributes to the property.
+    for ( const auto& it : m_inheritedAttributes )
+    {
+        property->SetAttribute(it.first, it.second);
+    }
+
     m_propHierarchy.push_back(property);
     DoScanForChildren();
     m_propHierarchy.pop_back();
+
+    m_inheritedAttributes = std::move(inheritedAttributesOrig);
 }
 
 // -----------------------------------------------------------------------
@@ -6540,7 +6574,8 @@ bool wxPropertyGridPopulator::ToLongPCT( const wxString& s, long* pval, long max
 
 bool wxPropertyGridPopulator::AddAttribute( const wxString& name,
                                             const wxString& type,
-                                            const wxString& value )
+                                            const wxString& value,
+                                            wxPGPropertyValuesFlags flags )
 {
     if ( m_propHierarchy.empty() )
         return false;
@@ -6587,6 +6622,11 @@ bool wxPropertyGridPopulator::AddAttribute( const wxString& name,
             ProcessError(wxString::Format(wxS("Invalid attribute type '%s'"),type));
             return false;
         }
+    }
+
+    if ( !!(flags & wxPGPropertyValuesFlags::Recurse) )
+    {
+        m_inheritedAttributes[name] = variant;
     }
 
     p->SetAttribute( name, variant );

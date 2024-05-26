@@ -120,6 +120,11 @@ class wxGridRowOperations;
 class wxGridColumnOperations;
 class wxGridDirectionOperations;
 
+#if wxUSE_ACCESSIBILITY
+class WXDLLIMPEXP_FWD_CORE wxGridAccessible;
+class WXDLLIMPEXP_FWD_CORE wxGridCellAccessible;
+#endif // wxUSE_ACCESSIBILITY
+
 
 // ----------------------------------------------------------------------------
 // macros
@@ -968,19 +973,24 @@ public:
     void SetCol( int n ) { m_col = n; }
     void Set( int row, int col ) { m_row = row; m_col = col; }
 
+    bool IsFullySpecified() const
+    {
+        return (m_row != -1 && m_col != -1);
+    }
+
     bool operator==( const wxGridCellCoords& other ) const
     {
-        return (m_row == other.m_row  &&  m_col == other.m_col);
+        return (m_row == other.m_row && m_col == other.m_col);
     }
 
     bool operator!=( const wxGridCellCoords& other ) const
     {
-        return (m_row != other.m_row  ||  m_col != other.m_col);
+        return (m_row != other.m_row || m_col != other.m_col);
     }
 
     bool operator!() const
     {
-        return (m_row == -1 && m_col == -1 );
+        return (m_row == -1 && m_col == -1);
     }
 
 private:
@@ -2376,6 +2386,7 @@ public:
     // ------- drag and drop
 #if wxUSE_DRAG_AND_DROP
     virtual void SetDropTarget(wxDropTarget *dropTarget) override;
+    virtual wxDropTarget* GetDropTarget() const override;
 #endif // wxUSE_DRAG_AND_DROP
 
 
@@ -2410,6 +2421,13 @@ public:
 
     // implementation only
     void CancelMouseCapture();
+
+#if wxUSE_ACCESSIBILITY
+    virtual wxAccessible* CreateAccessible() override;
+    virtual bool Show(bool show) override;
+    virtual void SetName(const wxString &name) override;
+    virtual bool Reparent(wxWindowBase *newParent) override;
+#endif // wxUSE_ACCESSIBILITY
 
 protected:
     virtual wxSize DoGetBestSize() const override;
@@ -2743,7 +2761,6 @@ protected:
 
     void OnSize( wxSizeEvent& );
     void OnKeyDown( wxKeyEvent& );
-    void OnKeyUp( wxKeyEvent& );
     void OnChar( wxKeyEvent& );
 
 
@@ -2769,6 +2786,11 @@ protected:
 
     friend class wxGridHeaderColumn;
     friend class wxGridHeaderCtrl;
+
+#if wxUSE_ACCESSIBILITY
+    friend class wxGridAccessible;
+    friend class wxGridCellAccessible;
+#endif // wxUSE_ACCESSIBILITY
 
 private:
     // This is called from both Create() and OnDPIChanged() to (re)initialize
