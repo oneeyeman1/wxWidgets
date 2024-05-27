@@ -3889,6 +3889,7 @@ COND_USE_GUI_1_ALL_GUI_HEADERS =  \
 	wx/richtooltip.h \
 	wx/sound.h \
 	wx/generic/laywin.h \
+	wx/generic/maskededit.h \
 	wx/generic/splash.h \
 	wx/generic/calctrlg.h \
 	wx/generic/sashwin.h \
@@ -4578,6 +4579,7 @@ COND_USE_GUI_1_WXUNIV_0___CORE_SRC_OBJECTS =  \
 	monodll_datavgen.o \
 	monodll_editlbox.o \
 	monodll_laywin.o \
+	monodll_maskededit.o \
 	monodll_calctrlg.o \
 	monodll_creddlgg.o \
 	monodll_rowheightcache.o \
@@ -4842,6 +4844,7 @@ COND_USE_GUI_1_WXUNIV_1___CORE_SRC_OBJECTS =  \
 	monodll_datavgen.o \
 	monodll_editlbox.o \
 	monodll_laywin.o \
+	monodll_maskededit.o 
 	monodll_calctrlg.o \
 	monodll_creddlgg.o \
 	monodll_rowheightcache.o \
@@ -6346,6 +6349,7 @@ COND_USE_GUI_1_WXUNIV_0___CORE_SRC_OBJECTS_1 =  \
 	monolib_datavgen.o \
 	monolib_editlbox.o \
 	monolib_laywin.o \
+	monolib_maskededit.o \
 	monolib_calctrlg.o \
 	monolib_creddlgg.o \
 	monolib_rowheightcache.o \
@@ -6610,6 +6614,7 @@ COND_USE_GUI_1_WXUNIV_1___CORE_SRC_OBJECTS_1 =  \
 	monolib_datavgen.o \
 	monolib_editlbox.o \
 	monolib_laywin.o \
+	monolib_maskededit.o \
 	monolib_calctrlg.o \
 	monolib_creddlgg.o \
 	monolib_rowheightcache.o \
@@ -8264,6 +8269,7 @@ COND_USE_GUI_1_WXUNIV_0___CORE_SRC_OBJECTS_2 =  \
 	coredll_datavgen.o \
 	coredll_editlbox.o \
 	coredll_laywin.o \
+	coredll_maskededit.o \
 	coredll_calctrlg.o \
 	coredll_creddlgg.o \
 	coredll_rowheightcache.o \
@@ -8528,6 +8534,7 @@ COND_USE_GUI_1_WXUNIV_1___CORE_SRC_OBJECTS_2 =  \
 	coredll_datavgen.o \
 	coredll_editlbox.o \
 	coredll_laywin.o \
+	coredll_maskededit.o \
 	coredll_calctrlg.o \
 	coredll_creddlgg.o \
 	coredll_rowheightcache.o \
@@ -9757,6 +9764,7 @@ COND_USE_GUI_1_WXUNIV_0___CORE_SRC_OBJECTS_3 =  \
 	corelib_datavgen.o \
 	corelib_editlbox.o \
 	corelib_laywin.o \
+	corelib_masededit.o \
 	corelib_calctrlg.o \
 	corelib_creddlgg.o \
 	corelib_rowheightcache.o \
@@ -10021,6 +10029,7 @@ COND_USE_GUI_1_WXUNIV_1___CORE_SRC_OBJECTS_3 =  \
 	corelib_datavgen.o \
 	corelib_editlbox.o \
 	corelib_laywin.o \
+	corelib_maskededit.o \
 	corelib_calctrlg.o \
 	corelib_creddlgg.o \
 	corelib_rowheightcache.o \
@@ -19484,6 +19493,9 @@ monodll_sound_sdl.o: $(srcdir)/src/unix/sound_sdl.cpp $(MONODLL_ODEP)
 @COND_USE_GUI_1@monodll_laywin.o: $(srcdir)/src/generic/laywin.cpp $(MONODLL_ODEP)
 @COND_USE_GUI_1@	$(CXXC) -c -o $@ $(MONODLL_CXXFLAGS) $(srcdir)/src/generic/laywin.cpp
 
+@COND_USE_GUI_1@monodll_maskededit.o: $(srcdir)/src/generic/maskededit.cpp $(MONODLL_ODEP)
+@COND_USE_GUI_1@	$(CXXC) -c -o $@ $(MONODLL_CXXFLAGS) $(srcdir)/src/generic/maskededit.cpp
+
 @COND_USE_GUI_1@monodll_calctrlg.o: $(srcdir)/src/generic/calctrlg.cpp $(MONODLL_ODEP)
 @COND_USE_GUI_1@	$(CXXC) -c -o $@ $(MONODLL_CXXFLAGS) $(srcdir)/src/generic/calctrlg.cpp
 
@@ -24245,7 +24257,10 @@ monolib_sound_sdl.o: $(srcdir)/src/unix/sound_sdl.cpp $(MONOLIB_ODEP)
 @COND_USE_GUI_1@monolib_laywin.o: $(srcdir)/src/generic/laywin.cpp $(MONOLIB_ODEP)
 @COND_USE_GUI_1@	$(CXXC) -c -o $@ $(MONOLIB_CXXFLAGS) $(srcdir)/src/generic/laywin.cpp
 
-@COND_USE_GUI_1@monolib_calctrlg.o: $(srcdir)/src/generic/calctrlg.cpp $(MONOLIB_ODEP)
+@@COND_USE_GUI_1@monolib_maskededit.o: $(srcdir)/src/generic/maskededit.cpp $(MONOLIB_ODEP)
+@COND_USE_GUI_1@	$(CXXC) -c -o $@ $(MONOLIB_CXXFLAGS) $(srcdir)/src/generic/maskededit.cpp
+
+COND_USE_GUI_1@monolib_calctrlg.o: $(srcdir)/src/generic/calctrlg.cpp $(MONOLIB_ODEP)
 @COND_USE_GUI_1@	$(CXXC) -c -o $@ $(MONOLIB_CXXFLAGS) $(srcdir)/src/generic/calctrlg.cpp
 
 @COND_USE_GUI_1@monolib_creddlgg.o: $(srcdir)/src/generic/creddlgg.cpp $(MONOLIB_ODEP)
@@ -29096,6 +29111,9 @@ coredll_sound_sdl.o: $(srcdir)/src/unix/sound_sdl.cpp $(COREDLL_ODEP)
 @COND_USE_GUI_1@coredll_laywin.o: $(srcdir)/src/generic/laywin.cpp $(COREDLL_ODEP)
 @COND_USE_GUI_1@	$(CXXC) -c -o $@ $(COREDLL_CXXFLAGS) $(srcdir)/src/generic/laywin.cpp
 
+@COND_USE_GUI_1@coredll_maskededit.o: $(srcdir)/src/generic/maskededit.cpp $(COREDLL_ODEP)
+@COND_USE_GUI_1@	$(CXXC) -c -o $@ $(COREDLL_CXXFLAGS) $(srcdir)/src/generic/maskededit.cpp
+
 @COND_USE_GUI_1@coredll_calctrlg.o: $(srcdir)/src/generic/calctrlg.cpp $(COREDLL_ODEP)
 @COND_USE_GUI_1@	$(CXXC) -c -o $@ $(COREDLL_CXXFLAGS) $(srcdir)/src/generic/calctrlg.cpp
 
@@ -32818,6 +32836,9 @@ corelib_sound_sdl.o: $(srcdir)/src/unix/sound_sdl.cpp $(CORELIB_ODEP)
 
 @COND_USE_GUI_1@corelib_laywin.o: $(srcdir)/src/generic/laywin.cpp $(CORELIB_ODEP)
 @COND_USE_GUI_1@	$(CXXC) -c -o $@ $(CORELIB_CXXFLAGS) $(srcdir)/src/generic/laywin.cpp
+
+@COND_USE_GUI_1@corelib_maskededit.o: $(srcdir)/src/generic/maskededit.cpp $(CORELIB_ODEP)
+@COND_USE_GUI_1@	$(CXXC) -c -o $@ $(CORELIB_CXXFLAGS) $(srcdir)/src/generic/maskededit.cpp
 
 @COND_USE_GUI_1@corelib_calctrlg.o: $(srcdir)/src/generic/calctrlg.cpp $(CORELIB_ODEP)
 @COND_USE_GUI_1@	$(CXXC) -c -o $@ $(CORELIB_CXXFLAGS) $(srcdir)/src/generic/calctrlg.cpp

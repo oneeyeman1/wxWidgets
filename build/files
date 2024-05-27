@@ -914,6 +914,7 @@ GUI_CMN_SRC =
     src/generic/listbkg.cpp
     src/generic/logg.cpp
     src/generic/markuptext.cpp
+    src/generic/maskededit.cpp
     src/generic/msgdlgg.cpp
     src/generic/notifmsgg.cpp
     src/generic/numdlgg.cpp
@@ -1072,6 +1073,7 @@ GUI_CMN_HDR =
     wx/generic/hyperlink.h
     wx/generic/infobar.h
     wx/generic/laywin.h
+    src/generic/maskededit.h
     wx/generic/logg.h
     wx/generic/msgdlgg.h
     wx/generic/notebook.h

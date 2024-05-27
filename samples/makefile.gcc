@@ -122,6 +122,7 @@ clean:
 	$(MAKE) -C keyboard -f makefile.gcc $(MAKEARGS) clean
 	$(MAKE) -C layout -f makefile.gcc $(MAKEARGS) clean
 	$(MAKE) -C listctrl -f makefile.gcc $(MAKEARGS) clean
+	$(MAKE) -C maskededit -f makefile.gcc $(MAKEARGS) clean
 	$(MAKE) -C mdi -f makefile.gcc $(MAKEARGS) clean
 	$(MAKE) -C mediaplayer -f makefile.gcc $(MAKEARGS) clean
 	$(MAKE) -C menu -f makefile.gcc $(MAKEARGS) clean
@@ -286,6 +287,9 @@ layout:
 
 listctrl: 
 	$(MAKE) -C listctrl -f makefile.gcc $(MAKEARGS) all
+
+maskededit: 
+	$(MAKE) -C maskededit -f makefile.gcc $(MAKEARGS) all
 
 mdi: 
 	$(MAKE) -C mdi -f makefile.gcc $(MAKEARGS) all
