@@ -10316,7 +10316,7 @@ if test "${enable_maskededit+set}" = set; then :
 
 else
 
-                          wx_cv_use_maskededot='wxUSE_MASKED_EDIT=${'DEFAULT_wxUSE_MASKED_EDIT":-$defaultval}"
+                          wx_cv_use_maskededit='wxUSE_MASKED_EDIT=${'DEFAULT_wxUSE_MASKED_EDIT":-$defaultval}"
 
 fi
 

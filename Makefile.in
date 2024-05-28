@@ -4844,7 +4844,7 @@ COND_USE_GUI_1_WXUNIV_1___CORE_SRC_OBJECTS =  \
 	monodll_datavgen.o \
 	monodll_editlbox.o \
 	monodll_laywin.o \
-	monodll_maskededit.o 
+	monodll_maskededit.o \
 	monodll_calctrlg.o \
 	monodll_creddlgg.o \
 	monodll_rowheightcache.o \
