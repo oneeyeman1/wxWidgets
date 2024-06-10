@@ -974,6 +974,10 @@ void wxMaskedEdit::OnChar(wxKeyEvent& event)
     {
         //restore
         m_filled = m_fillBck;
+#if wxUSE_ACCESSIBILITY
+        //beep
+        DoBell();
+#endif
     }
 }
 
@@ -1643,6 +1647,10 @@ void wxMaskedEdit::DoPaste()
     {
         //restore
         m_filled = m_fillBck;
+#if wxUSE_ACCESSIBILITY
+        //beep
+        DoBell();
+#endif
     }
 }
 
