@@ -196,7 +196,7 @@ protected:
     void GTKSetActivatesDefault();
     void GTKSetWrapMode();
     void GTKSetJustification();
-    
+
 private:
     void Init();
 
