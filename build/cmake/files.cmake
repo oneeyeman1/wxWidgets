@@ -47,6 +47,7 @@ set(BASE_UNIX_SRC
     src/unix/secretstore.cpp
     src/unix/stdpaths.cpp
     src/unix/uilocale.cpp
+    src/unix/volumeenum.cpp
 )
 
 set(BASE_UNIX_HDR
@@ -1420,6 +1421,8 @@ set(GTK_SRC
     src/gtk/tglbtn.cpp
     src/gtk/treeentry_gtk.c
     src/gtk/taskbar.cpp
+    src/gtk/volumeenum.cpp
+    src/gtk/volume.cpp
     src/gtk/notifmsg.cpp
     src/gtk/dataview.cpp
     src/gtk/aboutdlg.cpp
