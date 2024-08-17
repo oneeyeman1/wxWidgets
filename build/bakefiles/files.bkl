@@ -115,6 +115,7 @@ IMPORTANT: please read docs/tech/tn0016.txt before modifying this file!
     src/unix/stdpaths.cpp
     src/unix/secretstore.cpp
     src/unix/uilocale.cpp
+    src/unix/volumeenum.cpp
 </set>
 <set var="BASE_UNIX_HDR" hints="files">
     $(BASE_UNIX_AND_DARWIN_NOTWXMAC_HDR)
@@ -1535,6 +1536,8 @@ IMPORTANT: please read docs/tech/tn0016.txt before modifying this file!
     src/gtk/textentry.cpp
     src/gtk/tglbtn.cpp
     src/gtk/treeentry_gtk.c
+    src/gtk/volumeenum.cpp
+    src/gtk/volume.cpp
     src/gtk/activityindicator.cpp
     src/gtk/calctrl.cpp
     src/gtk/hyperlink.cpp

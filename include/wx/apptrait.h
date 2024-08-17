@@ -171,6 +171,8 @@ public:
     virtual wxString GetAssertStackTrace();
 #endif // wxUSE_STACKWALKER
 
+    virtual wxFSVolumeEnumerator &GetVolumesOnGTK() const;
+
 private:
     static wxSocketManager *ms_manager;
 };
@@ -238,6 +240,7 @@ public:
 
     virtual bool IsUsingUniversalWidgets() const override { return false; }
     virtual wxString GetDesktopEnvironment() const override { return wxEmptyString; }
+    virtual wxFSVolumeEnumerator &GetVolumesOnGTK() const override { return wxFSVolumeTrivialEnum; }
 };
 
 // ----------------------------------------------------------------------------
@@ -278,6 +281,7 @@ public:
     }
 
     virtual wxString GetDesktopEnvironment() const override { return wxEmptyString; }
+    virtual wxFSVolumeEnumerator &GetVolumesOnGTK() const override { return wxFSVolumeGIOEnum; }
 };
 
 #endif // wxUSE_GUI
