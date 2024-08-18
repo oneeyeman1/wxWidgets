@@ -957,6 +957,7 @@ ALL_BASE_SOURCES =  \
 	src/unix/stdpaths.cpp \
 	src/unix/secretstore.cpp \
 	src/unix/uilocale.cpp \
+	src/unix/volumeenum.cpp \
 	src/msw/basemsw.cpp \
 	src/msw/crashrpt.cpp \
 	src/msw/debughlp.cpp \
@@ -4185,7 +4186,8 @@ COND_PLATFORM_UNIX_1___BASE_PLATFORM_SRC_OBJECTS =  \
 	monodll_fswatcher_inotify.o \
 	monodll_unix_stdpaths.o \
 	monodll_unix_secretstore.o \
-	monodll_unix_uilocale.o
+	monodll_unix_uilocale.o \
+	monodll_unix_volumeenum.o
 @COND_PLATFORM_UNIX_1@__BASE_PLATFORM_SRC_OBJECTS = $(COND_PLATFORM_UNIX_1___BASE_PLATFORM_SRC_OBJECTS)
 COND_PLATFORM_WIN32_1___BASE_PLATFORM_SRC_OBJECTS =  \
 	monodll_basemsw.o \
@@ -5168,6 +5170,8 @@ COND_TOOLKIT_GTK_TOOLKIT_VERSION_2___GUI_SRC_OBJECTS =  \
 	monodll_gtk_textentry.o \
 	monodll_gtk_tglbtn.o \
 	monodll_treeentry_gtk.o \
+	monodll_gtk_volumeenum.o \
+	monodll_gtk_volume.o \
 	monodll_gtk_activityindicator.o \
 	monodll_gtk_calctrl.o \
 	monodll_gtk_hyperlink.o \
@@ -5235,6 +5239,8 @@ COND_TOOLKIT_GTK_TOOLKIT_VERSION_3___GUI_SRC_OBJECTS =  \
 	monodll_gtk_textentry.o \
 	monodll_gtk_tglbtn.o \
 	monodll_treeentry_gtk.o \
+	monodll_gtk_volumeenum.o \
+	monodll_gtk_volume.o \
 	monodll_gtk_activityindicator.o \
 	monodll_gtk_calctrl.o \
 	monodll_gtk_hyperlink.o \
@@ -5300,6 +5306,8 @@ COND_TOOLKIT_GTK_TOOLKIT_VERSION_4___GUI_SRC_OBJECTS =  \
 	monodll_gtk_textentry.o \
 	monodll_gtk_tglbtn.o \
 	monodll_treeentry_gtk.o \
+	monodll_gtk_volumeenum.o \
+	monodll_gtk_volume.o \
 	monodll_gtk_activityindicator.o \
 	monodll_gtk_calctrl.o \
 	monodll_gtk_hyperlink.o \
@@ -5951,7 +5959,8 @@ COND_PLATFORM_UNIX_1___BASE_PLATFORM_SRC_OBJECTS_1 =  \
 	monolib_fswatcher_inotify.o \
 	monolib_unix_stdpaths.o \
 	monolib_unix_secretstore.o \
-	monolib_unix_uilocale.o
+	monolib_unix_uilocale.o \
+	monolib_unix_volumeenum.o
 @COND_PLATFORM_UNIX_1@__BASE_PLATFORM_SRC_OBJECTS_1 = $(COND_PLATFORM_UNIX_1___BASE_PLATFORM_SRC_OBJECTS_1)
 COND_PLATFORM_WIN32_1___BASE_PLATFORM_SRC_OBJECTS_1 =  \
 	monolib_basemsw.o \
@@ -6934,6 +6943,8 @@ COND_TOOLKIT_GTK_TOOLKIT_VERSION_2___GUI_SRC_OBJECTS_1 =  \
 	monolib_gtk_textentry.o \
 	monolib_gtk_tglbtn.o \
 	monolib_treeentry_gtk.o \
+	monolib_gtk_volumeenum.o \
+	monolib_gtk_volume.o \
 	monolib_gtk_activityindicator.o \
 	monolib_gtk_calctrl.o \
 	monolib_gtk_hyperlink.o \
@@ -7001,6 +7012,8 @@ COND_TOOLKIT_GTK_TOOLKIT_VERSION_3___GUI_SRC_OBJECTS_1 =  \
 	monolib_gtk_textentry.o \
 	monolib_gtk_tglbtn.o \
 	monolib_treeentry_gtk.o \
+	monolib_gtk_volumeenum.o \
+	monolib_gtk_volume.o \
 	monolib_gtk_activityindicator.o \
 	monolib_gtk_calctrl.o \
 	monolib_gtk_hyperlink.o \
@@ -7066,6 +7079,8 @@ COND_TOOLKIT_GTK_TOOLKIT_VERSION_4___GUI_SRC_OBJECTS_1 =  \
 	monolib_gtk_textentry.o \
 	monolib_gtk_tglbtn.o \
 	monolib_treeentry_gtk.o \
+	monolib_gtk_volumeenum.o \
+	monolib_gtk_volume.o \
 	monolib_gtk_activityindicator.o \
 	monolib_gtk_calctrl.o \
 	monolib_gtk_hyperlink.o \
@@ -7767,7 +7782,8 @@ COND_PLATFORM_UNIX_1___BASE_PLATFORM_SRC_OBJECTS_2 =  \
 	basedll_fswatcher_inotify.o \
 	basedll_unix_stdpaths.o \
 	basedll_unix_secretstore.o \
-	basedll_unix_uilocale.o
+	basedll_unix_uilocale.o \
+	basedll_volumeenum.o
 @COND_PLATFORM_UNIX_1@__BASE_PLATFORM_SRC_OBJECTS_2 = $(COND_PLATFORM_UNIX_1___BASE_PLATFORM_SRC_OBJECTS_2)
 COND_PLATFORM_WIN32_1___BASE_PLATFORM_SRC_OBJECTS_2 =  \
 	basedll_basemsw.o \
@@ -7854,7 +7870,8 @@ COND_PLATFORM_UNIX_1___BASE_PLATFORM_SRC_OBJECTS_3 =  \
 	baselib_fswatcher_inotify.o \
 	baselib_unix_stdpaths.o \
 	baselib_unix_secretstore.o \
-	baselib_unix_uilocale.o
+	baselib_unix_uilocale.o \
+	baselib_volumeenum.o
 @COND_PLATFORM_UNIX_1@__BASE_PLATFORM_SRC_OBJECTS_3 = $(COND_PLATFORM_UNIX_1___BASE_PLATFORM_SRC_OBJECTS_3)
 COND_PLATFORM_WIN32_1___BASE_PLATFORM_SRC_OBJECTS_3 =  \
 	baselib_basemsw.o \
@@ -8850,6 +8867,8 @@ COND_TOOLKIT_GTK_TOOLKIT_VERSION_2___GUI_SRC_OBJECTS_2 =  \
 	coredll_gtk_textentry.o \
 	coredll_gtk_tglbtn.o \
 	coredll_treeentry_gtk.o \
+	coredll_volumeenum.o \
+	coredll_gtk_volume.o \
 	coredll_gtk_activityindicator.o \
 	coredll_gtk_calctrl.o \
 	coredll_gtk_hyperlink.o \
@@ -8917,6 +8936,8 @@ COND_TOOLKIT_GTK_TOOLKIT_VERSION_3___GUI_SRC_OBJECTS_2 =  \
 	coredll_gtk_textentry.o \
 	coredll_gtk_tglbtn.o \
 	coredll_treeentry_gtk.o \
+	coredll_volumeenum.o \
+	coredll_gtk_volume.o \
 	coredll_gtk_activityindicator.o \
 	coredll_gtk_calctrl.o \
 	coredll_gtk_hyperlink.o \
@@ -8982,6 +9003,8 @@ COND_TOOLKIT_GTK_TOOLKIT_VERSION_4___GUI_SRC_OBJECTS_2 =  \
 	coredll_gtk_textentry.o \
 	coredll_gtk_tglbtn.o \
 	coredll_treeentry_gtk.o \
+	coredll_volumeenum.o \
+	coredll_gtk_volume.o \
 	coredll_gtk_activityindicator.o \
 	coredll_gtk_calctrl.o \
 	coredll_gtk_hyperlink.o \
@@ -10341,6 +10364,8 @@ COND_TOOLKIT_GTK_TOOLKIT_VERSION_2___GUI_SRC_OBJECTS_3 =  \
 	corelib_gtk_textentry.o \
 	corelib_gtk_tglbtn.o \
 	corelib_treeentry_gtk.o \
+	corelib_volumeenum.o \
+	corelib_gtk_volume.o \
 	corelib_gtk_activityindicator.o \
 	corelib_gtk_calctrl.o \
 	corelib_gtk_hyperlink.o \
@@ -10408,6 +10433,8 @@ COND_TOOLKIT_GTK_TOOLKIT_VERSION_3___GUI_SRC_OBJECTS_3 =  \
 	corelib_gtk_textentry.o \
 	corelib_gtk_tglbtn.o \
 	corelib_treeentry_gtk.o \
+	corelib_volumeenum.o \
+	corelib_gtk_volume.o \
 	corelib_gtk_activityindicator.o \
 	corelib_gtk_calctrl.o \
 	corelib_gtk_hyperlink.o \
@@ -10473,6 +10500,8 @@ COND_TOOLKIT_GTK_TOOLKIT_VERSION_4___GUI_SRC_OBJECTS_3 =  \
 	corelib_gtk_textentry.o \
 	corelib_gtk_tglbtn.o \
 	corelib_treeentry_gtk.o \
+	corelib_volumeenum.o \
+	corelib_gtk_volume.o \
 	corelib_gtk_activityindicator.o \
 	corelib_gtk_calctrl.o \
 	corelib_gtk_hyperlink.o \
@@ -15038,6 +15067,9 @@ monodll_unix_secretstore.o: $(srcdir)/src/unix/secretstore.cpp $(MONODLL_ODEP)
 monodll_unix_uilocale.o: $(srcdir)/src/unix/uilocale.cpp $(MONODLL_ODEP)
 	$(CXXC) -c -o $@ $(MONODLL_CXXFLAGS) $(srcdir)/src/unix/uilocale.cpp
 
+monodll_unix_volumeenum.o: $(srcdir)/src/unix/volumeenum.cpp $(MONODLL_ODEP)
+	$(CXXC) -c -o $@ $(MONODLL_CXXFLAGS) $(srcdir)/src/unix/volumeenum.cpp
+
 monodll_basemsw.o: $(srcdir)/src/msw/basemsw.cpp $(MONODLL_ODEP)
 	$(CXXC) -c -o $@ $(MONODLL_CXXFLAGS) $(srcdir)/src/msw/basemsw.cpp
 
@@ -18362,6 +18394,24 @@ monodll_sound_sdl.o: $(srcdir)/src/unix/sound_sdl.cpp $(MONODLL_ODEP)
 @COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@monodll_treeentry_gtk.o: $(srcdir)/src/gtk/treeentry_gtk.c $(MONODLL_ODEP)
 @COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@	$(CCC) -c -o $@ $(MONODLL_CFLAGS) $(srcdir)/src/gtk/treeentry_gtk.c
 
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@monodll_gtk_volumeenum.o: $(srcdir)/src/gtk/volumeenum.cpp $(MONODLL_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(MONODLL_CXXFLAGS) $(srcdir)/src/gtk/volumeenum.cpp
+
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_3_USE_GUI_1_WXUNIV_0@monodll_gtk_volumeenum.o: $(srcdir)/src/gtk/volumeenum.cpp $(MONODLL_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_3_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(MONODLL_CXXFLAGS) $(srcdir)/src/gtk/volumeenum.cpp
+
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@monodll_gtk_volumeenum.o: $(srcdir)/src/gtk/volumeenum.cpp $(MONODLL_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(MONODLL_CXXFLAGS) $(srcdir)/src/gtk/volumeenum.cpp
+
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@monodll_gtk_volume.o: $(srcdir)/src/gtk/volume.cpp $(MONODLL_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(MONODLL_CXXFLAGS) $(srcdir)/src/gtk/volume.cpp
+
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_3_USE_GUI_1_WXUNIV_0@monodll_gtk_volume.o: $(srcdir)/src/gtk/volume.cpp $(MONODLL_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_3_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(MONODLL_CXXFLAGS) $(srcdir)/src/gtk/volume.cpp
+
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@monodll_gtk_volume.o: $(srcdir)/src/gtk/volume.cpp $(MONODLL_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(MONODLL_CXXFLAGS) $(srcdir)/src/gtk/volume.cpp
+
 @COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@monodll_gtk_activityindicator.o: $(srcdir)/src/gtk/activityindicator.cpp $(MONODLL_ODEP)
 @COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(MONODLL_CXXFLAGS) $(srcdir)/src/gtk/activityindicator.cpp
 
@@ -19795,6 +19845,9 @@ monolib_unix_secretstore.o: $(srcdir)/src/unix/secretstore.cpp $(MONOLIB_ODEP)
 
 monolib_unix_uilocale.o: $(srcdir)/src/unix/uilocale.cpp $(MONOLIB_ODEP)
 	$(CXXC) -c -o $@ $(MONOLIB_CXXFLAGS) $(srcdir)/src/unix/uilocale.cpp
+
+monolib_unix_volumeenum.o: $(srcdir)/src/unix/volumeenum.cpp $(MONOLIB_ODEP)
+	$(CXXC) -c -o $@ $(MONOLIB_CXXFLAGS) $(srcdir)/src/unix/volumeenum.cpp
 
 monolib_basemsw.o: $(srcdir)/src/msw/basemsw.cpp $(MONOLIB_ODEP)
 	$(CXXC) -c -o $@ $(MONOLIB_CXXFLAGS) $(srcdir)/src/msw/basemsw.cpp
@@ -23120,6 +23173,24 @@ monolib_sound_sdl.o: $(srcdir)/src/unix/sound_sdl.cpp $(MONOLIB_ODEP)
 @COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@monolib_treeentry_gtk.o: $(srcdir)/src/gtk/treeentry_gtk.c $(MONOLIB_ODEP)
 @COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@	$(CCC) -c -o $@ $(MONOLIB_CFLAGS) $(srcdir)/src/gtk/treeentry_gtk.c
 
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@monolib_gtk_volumeenum.o: $(srcdir)/src/gtk/volumeenum.cpp $(MONOLIB_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(MONOLIB_CXXFLAGS) $(srcdir)/src/gtk/volumeenum.cpp
+
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_3_USE_GUI_1_WXUNIV_0@monolib_gtk_volumeenum.o: $(srcdir)/src/gtk/volumeenum.cpp $(MONOLIB_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_3_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(MONOLIB_CXXFLAGS) $(srcdir)/src/gtk/volumeenum.cpp
+
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@monolib_gtk_volumeenum.o: $(srcdir)/src/gtk/volumeenum.cpp $(MONOLIB_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(MONOLIB_CXXFLAGS) $(srcdir)/src/gtk/volumeenum.cpp
+
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@monolib_gtk_volume.o: $(srcdir)/src/gtk/volume.cpp $(MONOLIB_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(MONOLIB_CXXFLAGS) $(srcdir)/src/gtk/volume.cpp
+
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_3_USE_GUI_1_WXUNIV_0@monolib_gtk_volume.o: $(srcdir)/src/gtk/volume.cpp $(MONOLIB_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_3_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(MONOLIB_CXXFLAGS) $(srcdir)/src/gtk/volume.cpp
+
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@monolib_gtk_volume.o: $(srcdir)/src/gtk/volume.cpp $(MONOLIB_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(MONOLIB_CXXFLAGS) $(srcdir)/src/gtk/volume.cpp
+
 @COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@monolib_gtk_activityindicator.o: $(srcdir)/src/gtk/activityindicator.cpp $(MONOLIB_ODEP)
 @COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(MONOLIB_CXXFLAGS) $(srcdir)/src/gtk/activityindicator.cpp
 
@@ -24554,6 +24625,9 @@ basedll_unix_secretstore.o: $(srcdir)/src/unix/secretstore.cpp $(BASEDLL_ODEP)
 basedll_unix_uilocale.o: $(srcdir)/src/unix/uilocale.cpp $(BASEDLL_ODEP)
 	$(CXXC) -c -o $@ $(BASEDLL_CXXFLAGS) $(srcdir)/src/unix/uilocale.cpp
 
+basedll_volumeenum.o: $(srcdir)/src/unix/volumeenum.cpp $(BASEDLL_ODEP)
+	$(CXXC) -c -o $@ $(BASEDLL_CXXFLAGS) $(srcdir)/src/unix/volumeenum.cpp
+
 basedll_basemsw.o: $(srcdir)/src/msw/basemsw.cpp $(BASEDLL_ODEP)
 	$(CXXC) -c -o $@ $(BASEDLL_CXXFLAGS) $(srcdir)/src/msw/basemsw.cpp
 
@@ -25036,6 +25110,9 @@ baselib_unix_secretstore.o: $(srcdir)/src/unix/secretstore.cpp $(BASELIB_ODEP)
 
 baselib_unix_uilocale.o: $(srcdir)/src/unix/uilocale.cpp $(BASELIB_ODEP)
 	$(CXXC) -c -o $@ $(BASELIB_CXXFLAGS) $(srcdir)/src/unix/uilocale.cpp
+
+baselib_volumeenum.o: $(srcdir)/src/unix/volumeenum.cpp $(BASELIB_ODEP)
+	$(CXXC) -c -o $@ $(BASELIB_CXXFLAGS) $(srcdir)/src/unix/volumeenum.cpp
 
 baselib_basemsw.o: $(srcdir)/src/msw/basemsw.cpp $(BASELIB_ODEP)
 	$(CXXC) -c -o $@ $(BASELIB_CXXFLAGS) $(srcdir)/src/msw/basemsw.cpp
@@ -27967,6 +28044,24 @@ coredll_sound_sdl.o: $(srcdir)/src/unix/sound_sdl.cpp $(COREDLL_ODEP)
 
 @COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@coredll_treeentry_gtk.o: $(srcdir)/src/gtk/treeentry_gtk.c $(COREDLL_ODEP)
 @COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@	$(CCC) -c -o $@ $(COREDLL_CFLAGS) $(srcdir)/src/gtk/treeentry_gtk.c
+
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@coredll_volumeenum.o: $(srcdir)/src/gtk/volumeenum.cpp $(COREDLL_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(COREDLL_CXXFLAGS) $(srcdir)/src/gtk/volumeenum.cpp
+
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_3_USE_GUI_1_WXUNIV_0@coredll_volumeenum.o: $(srcdir)/src/gtk/volumeenum.cpp $(COREDLL_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_3_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(COREDLL_CXXFLAGS) $(srcdir)/src/gtk/volumeenum.cpp
+
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@coredll_volumeenum.o: $(srcdir)/src/gtk/volumeenum.cpp $(COREDLL_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(COREDLL_CXXFLAGS) $(srcdir)/src/gtk/volumeenum.cpp
+
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@coredll_gtk_volume.o: $(srcdir)/src/gtk/volume.cpp $(COREDLL_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(COREDLL_CXXFLAGS) $(srcdir)/src/gtk/volume.cpp
+
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_3_USE_GUI_1_WXUNIV_0@coredll_gtk_volume.o: $(srcdir)/src/gtk/volume.cpp $(COREDLL_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_3_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(COREDLL_CXXFLAGS) $(srcdir)/src/gtk/volume.cpp
+
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@coredll_gtk_volume.o: $(srcdir)/src/gtk/volume.cpp $(COREDLL_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(COREDLL_CXXFLAGS) $(srcdir)/src/gtk/volume.cpp
 
 @COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@coredll_gtk_activityindicator.o: $(srcdir)/src/gtk/activityindicator.cpp $(COREDLL_ODEP)
 @COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(COREDLL_CXXFLAGS) $(srcdir)/src/gtk/activityindicator.cpp
@@ -31687,6 +31782,24 @@ corelib_sound_sdl.o: $(srcdir)/src/unix/sound_sdl.cpp $(CORELIB_ODEP)
 
 @COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@corelib_treeentry_gtk.o: $(srcdir)/src/gtk/treeentry_gtk.c $(CORELIB_ODEP)
 @COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@	$(CCC) -c -o $@ $(CORELIB_CFLAGS) $(srcdir)/src/gtk/treeentry_gtk.c
+
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@corelib_volumeenum.o: $(srcdir)/src/gtk/volumeenum.cpp $(CORELIB_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(CORELIB_CXXFLAGS) $(srcdir)/src/gtk/volumeenum.cpp
+
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_3_USE_GUI_1_WXUNIV_0@corelib_volumeenum.o: $(srcdir)/src/gtk/volumeenum.cpp $(CORELIB_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_3_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(CORELIB_CXXFLAGS) $(srcdir)/src/gtk/volumeenum.cpp
+
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@corelib_volumeenum.o: $(srcdir)/src/gtk/volumeenum.cpp $(CORELIB_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(CORELIB_CXXFLAGS) $(srcdir)/src/gtk/volumeenum.cpp
+
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@corelib_gtk_volume.o: $(srcdir)/src/gtk/volume.cpp $(CORELIB_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(CORELIB_CXXFLAGS) $(srcdir)/src/gtk/volume.cpp
+
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_3_USE_GUI_1_WXUNIV_0@corelib_gtk_volume.o: $(srcdir)/src/gtk/volume.cpp $(CORELIB_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_3_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(CORELIB_CXXFLAGS) $(srcdir)/src/gtk/volume.cpp
+
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@corelib_gtk_volume.o: $(srcdir)/src/gtk/volume.cpp $(CORELIB_ODEP)
+@COND_TOOLKIT_GTK_TOOLKIT_VERSION_2_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(CORELIB_CXXFLAGS) $(srcdir)/src/gtk/volume.cpp
 
 @COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@corelib_gtk_activityindicator.o: $(srcdir)/src/gtk/activityindicator.cpp $(CORELIB_ODEP)
 @COND_TOOLKIT_GTK_TOOLKIT_VERSION_4_USE_GUI_1_WXUNIV_0@	$(CXXC) -c -o $@ $(CORELIB_CXXFLAGS) $(srcdir)/src/gtk/activityindicator.cpp
